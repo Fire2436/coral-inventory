@@ -1,0 +1,604 @@
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brandon Miller's Coral Inventory Page</title>
+  <style>
+    :root { --card: rgba(255,255,255,.07); --text: rgba(255,255,255,.92); --muted: rgba(255,255,255,.65);
+      --border: rgba(255,255,255,.14); --shadow: 0 10px 30px rgba(0,0,0,.35); --radius: 18px; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: radial-gradient(1100px 650px at 12% 12%, rgba(80,120,255,.24), transparent 60%),
+        radial-gradient(900px 600px at 85% 18%, rgba(0,255,200,.18), transparent 55%),
+        linear-gradient(180deg, #050812, #0b1220 35%, #070b16);
+      color: var(--text); min-height:100vh; }
+    header { padding:26px 16px 10px; max-width:1100px; margin:0 auto; }
+    h1 { margin:0 0 6px; font-size:28px; }
+    .sub { margin:0; color:var(--muted); font-size:14px; line-height:1.4; }
+    .wrap { max-width:1100px; margin:0 auto; padding:14px 16px 38px; }
+    .card { background: var(--card); border:1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+    .controls { display:grid; grid-template-columns: 1.2fr .8fr .6fr .6fr .7fr .8fr; gap:12px; margin:14px 0 16px; }
+    @media (max-width:1100px) { .controls { grid-template-columns:1fr; } }
+    .control-card { padding:12px; }
+    label { display:block; font-size:12px; color:var(--muted); margin:0 0 6px; }
+    input, select, button { width:100%; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.18); color: var(--text); outline:none; }
+    button { cursor:pointer; font-weight:650; }
+    button:hover { background: rgba(255,255,255,.10); }
+    button:disabled, input:disabled, select:disabled { opacity:.6; cursor:not-allowed; }
+    .stats { display:grid; grid-template-columns: repeat(6, 1fr); gap:10px; padding:12px; margin-bottom:14px; }
+    @media (max-width:980px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+    .stat { padding:12px; border-radius:14px; border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
+    .stat .k { font-size:12px; color:var(--muted); }
+    .stat .v { font-size:20px; margin-top:4px; font-weight:650; }
+    .table-wrap { overflow:hidden; }
+    .table-head { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--border); }
+    .pill { display:inline-block; padding:5px 10px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.04); color: var(--muted); }
+    table { width:100%; border-collapse:separate; border-spacing:0; }
+    thead th { text-align:left; font-size:12px; color:var(--muted); padding:12px 14px; border-bottom:1px solid var(--border);
+      background: rgba(0,0,0,.16); position:sticky; top:0; z-index:1; }
+    tbody td { padding:11px 14px; border-bottom:1px solid rgba(255,255,255,.07); white-space:pre-wrap; word-break:break-word; }
+    tbody tr:hover td { background: rgba(255,255,255,.04); }
+    .price-cell { display:flex; gap:10px; align-items:center; }
+    input.price { flex:1; padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.16); min-width:120px; }
+    input.price.locked { opacity:.85; border-color: rgba(255,255,255,.22); }
+    .lock-btn { width:92px; padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06); font-weight:700; white-space:nowrap; }
+    .lock-btn.locked { background: rgba(255,255,255,.10); }
+    .modal-backdrop { position:fixed; inset:0; background: rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; padding:16px; z-index:50; }
+    .modal { width:100%; max-width:520px; padding:16px; }
+    .modal h2 { margin:0 0 8px; font-size:18px; }
+    .modal p { margin:0 0 12px; color:var(--muted); font-size:13px; line-height:1.4; }
+    .modal .row { display:grid; grid-template-columns:1fr; gap:10px; }
+    .modal .actions { display:flex; gap:10px; margin-top:12px; }
+    .modal .actions button { flex:1; }
+    .error { color:#ffb4b4; font-size:13px; margin-top:10px; display:none; }
+    .footer { margin-top:12px; color:var(--muted); font-size:12px; text-align:center; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Brandon Miller's Coral Inventory Page</h1>
+    <p class="sub">Unlock prices, then click <b>Export Shareable HTML</b> to create a file you can upload and share. The exported file includes your <b>encrypted</b> prices (viewable with the password).</p>
+  </header>
+
+  <div class="wrap">
+    <div class="controls">
+      <div class="card control-card">
+        <label for="search">Search</label>
+        <input id="search" type="text" placeholder="Type to search...">
+      </div>
+      <div class="card control-card">
+        <label for="category">Category</label>
+        <select id="category">
+          <option value="all">All categories</option>
+          <option value="SPS">SPS</option>
+<option value="LPS">LPS</option>
+<option value="Softies">Softies</option>
+<option value="Zoanthids">Zoanthids</option>
+        </select>
+      </div>
+      <div class="card control-card"><label>&nbsp;</label><button id="unlockPrices" type="button">Unlock Prices</button></div>
+      <div class="card control-card"><label>&nbsp;</label><button id="exportShareable" type="button">Export Shareable HTML</button></div>
+      <div class="card control-card"><label>&nbsp;</label><button id="changePassword" type="button">Change Password</button></div>
+      <div class="card control-card"><label>&nbsp;</label><button id="clearPrices" type="button">Clear Prices</button></div>
+    </div>
+
+    <div class="card stats" aria-label="Counts and totals">
+      <div class="stat"><div class="k">SPS</div><div class="v">27</div></div>
+<div class="stat"><div class="k">LPS</div><div class="v">15</div></div>
+<div class="stat"><div class="k">Softies</div><div class="v">6</div></div>
+<div class="stat"><div class="k">Zoanthids</div><div class="v">27</div></div>
+      <div class="stat"><div class="k">Priced items</div><div class="v" id="pricedCount">3</div></div>
+      <div class="stat"><div class="k">Total value</div><div class="v" id="totalValue">$295.00</div></div>
+    </div>
+
+    <div class="card table-wrap">
+      <div class="table-head"><div style="font-weight:650;">Inventory</div><div class="pill" id="resultsPill">75 results</div></div>
+      <div style="overflow:auto; max-height: 65vh;">
+        <table id="coralTable">
+          <thead><tr><th>Category</th><th>Item</th><th>Price</th></tr></thead>
+          <tbody>
+            <tr><td>SPS</td><td>PC Superman</td><td class="price-cell"><input class="price locked" inputmode="decimal" placeholder="$0.00" data-key="SPS|PC Superman" disabled=""><button class="lock-btn locked" type="button" data-key="SPS|PC Superman">Unlock</button></td></tr>
+<tr><td>LPS</td><td>Holy Grail torch</td><td class="price-cell"><input class="price locked" inputmode="decimal" placeholder="$0.00" data-key="LPS|Holy Grail torch" disabled=""><button class="lock-btn locked" type="button" data-key="LPS|Holy Grail torch">Unlock</button></td></tr>
+<tr><td>Softies</td><td>Alveapora</td><td class="price-cell"><input class="price locked" inputmode="decimal" placeholder="$0.00" data-key="Softies|Alveapora" disabled=""><button class="lock-btn locked" type="button" data-key="Softies|Alveapora">Unlock</button></td></tr>
+<tr><td>Zoanthids</td><td>Goblins on Fire</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Goblins on Fire"><button class="lock-btn" type="button" data-key="Zoanthids|Goblins on Fire">Lock</button></td></tr>
+<tr><td>SPS</td><td>RMF tigers blood</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|RMF tigers blood"><button class="lock-btn" type="button" data-key="SPS|RMF tigers blood">Lock</button></td></tr>
+<tr><td>LPS</td><td>BKChem The Grinch torch</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="LPS|BKChem The Grinch torch"><button class="lock-btn" type="button" data-key="LPS|BKChem The Grinch torch">Lock</button></td></tr>
+<tr><td>Softies</td><td>Ultra kenya</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Softies|Ultra kenya"><button class="lock-btn" type="button" data-key="Softies|Ultra kenya">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Ring of Fire</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Ring of Fire"><button class="lock-btn" type="button" data-key="Zoanthids|Ring of Fire">Lock</button></td></tr>
+<tr><td>SPS</td><td>CC dark knight</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|CC dark knight"><button class="lock-btn" type="button" data-key="SPS|CC dark knight">Lock</button></td></tr>
+<tr><td>LPS</td><td>TCK Master torch</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="LPS|TCK Master torch"><button class="lock-btn" type="button" data-key="LPS|TCK Master torch">Lock</button></td></tr>
+<tr><td>Softies</td><td>Pulsing Xenia</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Softies|Pulsing Xenia"><button class="lock-btn" type="button" data-key="Softies|Pulsing Xenia">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Mystic</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Mystic"><button class="lock-btn" type="button" data-key="Zoanthids|Mystic">Lock</button></td></tr>
+<tr><td>SPS</td><td>Back Draft</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Back Draft"><button class="lock-btn" type="button" data-key="SPS|Back Draft">Lock</button></td></tr>
+<tr><td>LPS</td><td>Dragon Tamer torch</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="LPS|Dragon Tamer torch"><button class="lock-btn" type="button" data-key="LPS|Dragon Tamer torch">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>RZ Pot of Gold</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|RZ Pot of Gold"><button class="lock-btn" type="button" data-key="Zoanthids|RZ Pot of Gold">Lock</button></td></tr>
+<tr><td>SPS</td><td>Pink Highlighter</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Pink Highlighter"><button class="lock-btn" type="button" data-key="SPS|Pink Highlighter">Lock</button></td></tr>
+<tr><td>LPS</td><td>Holy Moly torch</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="LPS|Holy Moly torch"><button class="lock-btn" type="button" data-key="LPS|Holy Moly torch">Lock</button></td></tr>
+<tr><td>Softies</td><td>Jaw breaker mushroom</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Softies|Jaw breaker mushroom"><button class="lock-btn" type="button" data-key="Softies|Jaw breaker mushroom">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>ACI Lorax</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|ACI Lorax"><button class="lock-btn" type="button" data-key="Zoanthids|ACI Lorax">Lock</button></td></tr>
+<tr><td>SPS</td><td>JF Homewreaker</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|JF Homewreaker"><button class="lock-btn" type="button" data-key="SPS|JF Homewreaker">Lock</button></td></tr>
+<tr><td>LPS</td><td>NY Knicks torch</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="LPS|NY Knicks torch"><button class="lock-btn" type="button" data-key="LPS|NY Knicks torch">Lock</button></td></tr>
+<tr><td>Softies</td><td>Sunkist bounce mushrom</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Softies|Sunkist bounce mushrom"><button class="lock-btn" type="button" data-key="Softies|Sunkist bounce mushrom">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Rastas</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Rastas"><button class="lock-btn" type="button" data-key="Zoanthids|Rastas">Lock</button></td></tr>
+<tr><td>SPS</td><td>SC Orange Passion</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|SC Orange Passion"><button class="lock-btn" type="button" data-key="SPS|SC Orange Passion">Lock</button></td></tr>
+<tr><td>LPS</td><td>Dragon Soul torch</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="LPS|Dragon Soul torch"><button class="lock-btn" type="button" data-key="LPS|Dragon Soul torch">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Bambams</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Bambams"><button class="lock-btn" type="button" data-key="Zoanthids|Bambams">Lock</button></td></tr>
+<tr><td>SPS</td><td>TSA Rainbow sherbert</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|TSA Rainbow sherbert"><button class="lock-btn" type="button" data-key="SPS|TSA Rainbow sherbert">Lock</button></td></tr>
+<tr><td>LPS</td><td>Hologram Hammer</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="LPS|Hologram Hammer"><button class="lock-btn" type="button" data-key="LPS|Hologram Hammer">Lock</button></td></tr>
+<tr><td>Softies</td><td>Cloves</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Softies|Cloves"><button class="lock-btn" type="button" data-key="Softies|Cloves">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Fairy Farts</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Fairy Farts"><button class="lock-btn" type="button" data-key="Zoanthids|Fairy Farts">Lock</button></td></tr>
+<tr><td>SPS</td><td>Walt Disney</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Walt Disney"><button class="lock-btn" type="button" data-key="SPS|Walt Disney">Lock</button></td></tr>
+<tr><td>LPS</td><td>Green w/blue tip hammer</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="LPS|Green w/blue tip hammer"><button class="lock-btn" type="button" data-key="LPS|Green w/blue tip hammer">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Hurricane</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Hurricane"><button class="lock-btn" type="button" data-key="Zoanthids|Hurricane">Lock</button></td></tr>
+<tr><td>SPS</td><td>Rainbow Splice</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Rainbow Splice"><button class="lock-btn" type="button" data-key="SPS|Rainbow Splice">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Red People Eater</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Red People Eater"><button class="lock-btn" type="button" data-key="Zoanthids|Red People Eater">Lock</button></td></tr>
+<tr><td>SPS</td><td>Side Chick</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Side Chick"><button class="lock-btn" type="button" data-key="SPS|Side Chick">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Magicians</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Magicians"><button class="lock-btn" type="button" data-key="Zoanthids|Magicians">Lock</button></td></tr>
+<tr><td>SPS</td><td>Fox Flame</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Fox Flame"><button class="lock-btn" type="button" data-key="SPS|Fox Flame">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Daisy Cutters</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Daisy Cutters"><button class="lock-btn" type="button" data-key="Zoanthids|Daisy Cutters">Lock</button></td></tr>
+<tr><td>SPS</td><td>Cherry Bomb</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Cherry Bomb"><button class="lock-btn" type="button" data-key="SPS|Cherry Bomb">Lock</button></td></tr>
+<tr><td>LPS</td><td>WWC Grafted Montipora cap</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="LPS|WWC Grafted Montipora cap"><button class="lock-btn" type="button" data-key="LPS|WWC Grafted Montipora cap">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Jungle Juice</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Jungle Juice"><button class="lock-btn" type="button" data-key="Zoanthids|Jungle Juice">Lock</button></td></tr>
+<tr><td>SPS</td><td>Red Handed Tenuous</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Red Handed Tenuous"><button class="lock-btn" type="button" data-key="SPS|Red Handed Tenuous">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Orange Oxide</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Orange Oxide"><button class="lock-btn" type="button" data-key="Zoanthids|Orange Oxide">Lock</button></td></tr>
+<tr><td>SPS</td><td>Blue Ten-yyy</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Blue Ten-yyy"><button class="lock-btn" type="button" data-key="SPS|Blue Ten-yyy">Lock</button></td></tr>
+<tr><td>LPS</td><td>Blue raven blastos</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="LPS|Blue raven blastos"><button class="lock-btn" type="button" data-key="LPS|Blue raven blastos">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Lazy’s Lashes</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Lazy’s Lashes"><button class="lock-btn" type="button" data-key="Zoanthids|Lazy’s Lashes">Lock</button></td></tr>
+<tr><td>SPS</td><td>CB the thing anacropora</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|CB the thing anacropora"><button class="lock-btn" type="button" data-key="SPS|CB the thing anacropora">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Warp drive</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Warp drive"><button class="lock-btn" type="button" data-key="Zoanthids|Warp drive">Lock</button></td></tr>
+<tr><td>SPS</td><td>Vivids confetti</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Vivids confetti"><button class="lock-btn" type="button" data-key="SPS|Vivids confetti">Lock</button></td></tr>
+<tr><td>LPS</td><td>Laffy Taffy goni</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="LPS|Laffy Taffy goni"><button class="lock-btn" type="button" data-key="LPS|Laffy Taffy goni">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Extreme utter chaos</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Extreme utter chaos"><button class="lock-btn" type="button" data-key="Zoanthids|Extreme utter chaos">Lock</button></td></tr>
+<tr><td>SPS</td><td>Superman table</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Superman table"><button class="lock-btn" type="button" data-key="SPS|Superman table">Lock</button></td></tr>
+<tr><td>LPS</td><td>Pink and yellow goni</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="LPS|Pink and yellow goni"><button class="lock-btn" type="button" data-key="LPS|Pink and yellow goni">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Bam bam extreme</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Bam bam extreme"><button class="lock-btn" type="button" data-key="Zoanthids|Bam bam extreme">Lock</button></td></tr>
+<tr><td>SPS</td><td>SBB Heisenberg</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|SBB Heisenberg"><button class="lock-btn" type="button" data-key="SPS|SBB Heisenberg">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Superman</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Superman"><button class="lock-btn" type="button" data-key="Zoanthids|Superman">Lock</button></td></tr>
+<tr><td>SPS</td><td>JF Jolt</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|JF Jolt"><button class="lock-btn" type="button" data-key="SPS|JF Jolt">Lock</button></td></tr>
+<tr><td>LPS</td><td>Rainbow acan</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="LPS|Rainbow acan"><button class="lock-btn" type="button" data-key="LPS|Rainbow acan">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>GMK</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|GMK"><button class="lock-btn" type="button" data-key="Zoanthids|GMK">Lock</button></td></tr>
+<tr><td>SPS</td><td>Pink floyd</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Pink floyd"><button class="lock-btn" type="button" data-key="SPS|Pink floyd">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Lazys golden girls</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Lazys golden girls"><button class="lock-btn" type="button" data-key="Zoanthids|Lazys golden girls">Lock</button></td></tr>
+<tr><td>SPS</td><td>Pikachu</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Pikachu"><button class="lock-btn" type="button" data-key="SPS|Pikachu">Lock</button></td></tr>
+<tr><td>LPS</td><td>Rainbow chalice</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="LPS|Rainbow chalice"><button class="lock-btn" type="button" data-key="LPS|Rainbow chalice">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Marvin the martian</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Marvin the martian"><button class="lock-btn" type="button" data-key="Zoanthids|Marvin the martian">Lock</button></td></tr>
+<tr><td>SPS</td><td>Rainbow Loom</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Rainbow Loom"><button class="lock-btn" type="button" data-key="SPS|Rainbow Loom">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Burning ember</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Burning ember"><button class="lock-btn" type="button" data-key="Zoanthids|Burning ember">Lock</button></td></tr>
+<tr><td>SPS</td><td>Grizzly Adams</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Grizzly Adams"><button class="lock-btn" type="button" data-key="SPS|Grizzly Adams">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Great owl</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Great owl"><button class="lock-btn" type="button" data-key="Zoanthids|Great owl">Lock</button></td></tr>
+<tr><td>SPS</td><td>Yellow Lokani</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Yellow Lokani"><button class="lock-btn" type="button" data-key="SPS|Yellow Lokani">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Sunny d's</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Sunny d's"><button class="lock-btn" type="button" data-key="Zoanthids|Sunny d's">Lock</button></td></tr>
+<tr><td>SPS</td><td>Pink cadillac</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Pink cadillac"><button class="lock-btn" type="button" data-key="SPS|Pink cadillac">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>AIO's</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|AIO's"><button class="lock-btn" type="button" data-key="Zoanthids|AIO's">Lock</button></td></tr>
+<tr><td>SPS</td><td>Blue milli (aquacultured)</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="SPS|Blue milli (aquacultured)"><button class="lock-btn" type="button" data-key="SPS|Blue milli (aquacultured)">Lock</button></td></tr>
+<tr><td>Zoanthids</td><td>Frozen Apples</td><td class="price-cell"><input class="price" inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Frozen Apples"><button class="lock-btn" type="button" data-key="Zoanthids|Frozen Apples">Lock</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footer">Exported shareable HTML is still client-side protection. For true security, you'd need hosted login.</div>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-label="Prices password" style="display: none;">
+    <div class="card modal">
+      <h2 id="modalTitle">Unlock Prices</h2>
+      <p id="modalDesc">Enter your password to decrypt and unlock prices.</p>
+
+      <div class="row" id="unlockRow" style="">
+        <div><label for="pwd">Password</label><input id="pwd" type="password" autocomplete="current-password" placeholder="Enter password"></div>
+      </div>
+
+      <div class="row" id="setRow" style="display:none;">
+        <div><label for="newPwd">New password</label><input id="newPwd" type="password" autocomplete="new-password" placeholder="Create a password"></div>
+        <div><label for="newPwd2">Confirm new password</label><input id="newPwd2" type="password" autocomplete="new-password" placeholder="Confirm password"></div>
+      </div>
+
+      <div class="row" id="changeRow" style="display:none;">
+        <div><label for="oldPwd">Current password</label><input id="oldPwd" type="password" autocomplete="current-password" placeholder="Current password"></div>
+        <div><label for="chgPwd">New password</label><input id="chgPwd" type="password" autocomplete="new-password" placeholder="New password"></div>
+        <div><label for="chgPwd2">Confirm new password</label><input id="chgPwd2" type="password" autocomplete="new-password" placeholder="Confirm new password"></div>
+      </div>
+
+      <div class="actions"><button id="modalCancel" type="button">Cancel</button><button id="modalOk" type="button" data-mode="unlock">OK</button></div>
+      <div class="error" id="modalError" style="display: none;">Error</div>
+    </div>
+  </div>
+
+<script>
+(function() {
+  const EMBEDDED_PAYLOAD = {"salt":"G3iu8qU1GP0X7xvLM2XxWw==","check":"F13CWn05HLTx/iLR.ylhuAudu/VFtLV/ccrfhnimX","prices":"{\"SPS|PC Superman\":\"86ez0xbCG0SjA12t.QjSmn8juyeAJeHGUCj146GIKNQ==\",\"LPS|Holy Grail torch\":\"oV2NC7AsKWB/7Qdb.ayh5UWUP6g8MFZeUV4EFlgwh+4w=\",\"Softies|Alveapora\":\"qqxequR0usAMBr7B.w1hhlTnMvfs+0FWN/vkJjFqbAA==\"}","locks":"{\"SPS|PC Superman\":true,\"LPS|Holy Grail torch\":true,\"Softies|Alveapora\":true,\"Zoanthids|Goblins on Fire\":false,\"SPS|RMF tigers blood\":false,\"LPS|BKChem The Grinch torch\":false,\"Softies|Ultra kenya\":false,\"Zoanthids|Ring of Fire\":false,\"SPS|CC dark knight\":false,\"LPS|TCK Master torch\":false,\"Softies|Pulsing Xenia\":false,\"Zoanthids|Mystic\":false,\"SPS|Back Draft\":false,\"LPS|Dragon Tamer torch\":false,\"Zoanthids|RZ Pot of Gold\":false,\"SPS|Pink Highlighter\":false,\"LPS|Holy Moly torch\":false,\"Softies|Jaw breaker mushroom\":false,\"Zoanthids|ACI Lorax\":false,\"SPS|JF Homewreaker\":false,\"LPS|NY Knicks torch\":false,\"Softies|Sunkist bounce mushrom\":false,\"Zoanthids|Rastas\":false,\"SPS|SC Orange Passion\":false,\"LPS|Dragon Soul torch\":false,\"Zoanthids|Bambams\":false,\"SPS|TSA Rainbow sherbert\":false,\"LPS|Hologram Hammer\":false,\"Softies|Cloves\":false,\"Zoanthids|Fairy Farts\":false,\"SPS|Walt Disney\":false,\"LPS|Green w/blue tip hammer\":false,\"Zoanthids|Hurricane\":false,\"SPS|Rainbow Splice\":false,\"Zoanthids|Red People Eater\":false,\"SPS|Side Chick\":false,\"Zoanthids|Magicians\":false,\"SPS|Fox Flame\":false,\"Zoanthids|Daisy Cutters\":false,\"SPS|Cherry Bomb\":false,\"LPS|WWC Grafted Montipora cap\":false,\"Zoanthids|Jungle Juice\":false,\"SPS|Red Handed Tenuous\":false,\"Zoanthids|Orange Oxide\":false,\"SPS|Blue Ten-yyy\":false,\"LPS|Blue raven blastos\":false,\"Zoanthids|Lazy’s Lashes\":false,\"SPS|CB the thing anacropora\":false,\"Zoanthids|Warp drive\":false,\"SPS|Vivids confetti\":false,\"LPS|Laffy Taffy goni\":false,\"Zoanthids|Extreme utter chaos\":false,\"SPS|Superman table\":false,\"LPS|Pink and yellow goni\":false,\"Zoanthids|Bam bam extreme\":false,\"SPS|SBB Heisenberg\":false,\"Zoanthids|Superman\":false,\"SPS|JF Jolt\":false,\"LPS|Rainbow acan\":false,\"Zoanthids|GMK\":false,\"SPS|Pink floyd\":false,\"Zoanthids|Lazys golden girls\":false,\"SPS|Pikachu\":false,\"LPS|Rainbow chalice\":false,\"Zoanthids|Marvin the martian\":false,\"SPS|Rainbow Loom\":false,\"Zoanthids|Burning ember\":false,\"SPS|Grizzly Adams\":false,\"Zoanthids|Great owl\":false,\"SPS|Yellow Lokani\":false,\"Zoanthids|Sunny d's\":false,\"SPS|Pink cadillac\":false,\"Zoanthids|AIO's\":false,\"SPS|Blue milli (aquacultured)\":false,\"Zoanthids|Frozen Apples\":false}"};
+
+  const K_SALT = 'coral_prices_salt_v1';
+  const K_CHECK = 'coral_prices_check_v1';
+  const K_PRICES = 'coral_prices_map_v1';
+  const K_LOCKS = 'coral_row_locks_v3';
+
+  const STORE = (() => {
+    if (EMBEDDED_PAYLOAD && typeof EMBEDDED_PAYLOAD === 'object') {
+      const mem = {
+        [K_SALT]: EMBEDDED_PAYLOAD.salt || null,
+        [K_CHECK]: EMBEDDED_PAYLOAD.check || null,
+        [K_PRICES]: EMBEDDED_PAYLOAD.prices || null,
+        [K_LOCKS]: EMBEDDED_PAYLOAD.locks || null,
+      };
+      return {
+        mode: 'embedded',
+        getItem: (k) => (mem[k] == null ? null : mem[k]),
+        setItem: (k, v) => { mem[k] = v; },
+        removeItem: (k) => { delete mem[k]; },
+      };
+    }
+    return {
+      mode: 'local',
+      getItem: (k) => localStorage.getItem(k),
+      setItem: (k, v) => localStorage.setItem(k, v),
+      removeItem: (k) => localStorage.removeItem(k),
+    };
+  })();
+
+  const searchEl = document.getElementById('search');
+  const catEl = document.getElementById('category');
+  const table = document.getElementById('coralTable');
+  const pill = document.getElementById('resultsPill');
+  const btnUnlock = document.getElementById('unlockPrices');
+  const btnExport = document.getElementById('exportShareable');
+  const btnChange = document.getElementById('changePassword');
+  const btnClear = document.getElementById('clearPrices');
+  const pricedCountEl = document.getElementById('pricedCount');
+  const totalValueEl = document.getElementById('totalValue');
+
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const unlockRow = document.getElementById('unlockRow');
+  const setRow = document.getElementById('setRow');
+  const changeRow = document.getElementById('changeRow');
+  const pwd = document.getElementById('pwd');
+  const newPwd = document.getElementById('newPwd');
+  const newPwd2 = document.getElementById('newPwd2');
+  const oldPwd = document.getElementById('oldPwd');
+  const chgPwd = document.getElementById('chgPwd');
+  const chgPwd2 = document.getElementById('chgPwd2');
+  const modalCancel = document.getElementById('modalCancel');
+  const modalOk = document.getElementById('modalOk');
+  const modalError = document.getElementById('modalError');
+
+  let unlocked = false;
+  let aesKey = null;
+  let pricesEnc = loadJson(K_PRICES, {});
+  let locks = loadJson(K_LOCKS, {});
+
+  function norm(s) { return (s || '').toString().toLowerCase().trim(); }
+  function loadJson(key, fallback) {
+    try { return JSON.parse(STORE.getItem(key) || JSON.stringify(fallback)); }
+    catch (e) { return fallback; }
+  }
+  function saveJson(key, obj) { STORE.setItem(key, JSON.stringify(obj)); }
+
+  function b64enc(bytes) { let bin=''; bytes.forEach(b => bin += String.fromCharCode(b)); return btoa(bin); }
+  function b64dec(b64) { const bin=atob(b64); const out=new Uint8Array(bin.length); for (let i=0;i<bin.length;i++) out[i]=bin.charCodeAt(i); return out; }
+
+  async function getOrCreateSalt() {
+    let s = STORE.getItem(K_SALT);
+    if (s) return b64dec(s);
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    STORE.setItem(K_SALT, b64enc(salt));
+    return salt;
+  }
+
+  async function deriveKeyFromPassword(password, salt) {
+    const enc = new TextEncoder();
+    const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name:'PBKDF2', salt, iterations:200000, hash:'SHA-256' },
+      baseKey,
+      { name:'AES-GCM', length:256 },
+      false,
+      ['encrypt','decrypt']
+    );
+  }
+
+  async function encryptString(key, plaintext) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const enc = new TextEncoder();
+    const ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, key, enc.encode(plaintext));
+    return b64enc(iv) + '.' + b64enc(new Uint8Array(ct));
+  }
+
+  async function decryptString(key, blob) {
+    const parts = (blob || '').split('.');
+    if (parts.length !== 2) throw new Error('Bad ciphertext');
+    const iv = b64dec(parts[0]);
+    const ct = b64dec(parts[1]);
+    const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, key, ct);
+    return new TextDecoder().decode(pt);
+  }
+
+  function currency(n) {
+    const num = Number(n);
+    if (!isFinite(num)) return '\u00240.00';
+    return num.toLocaleString(undefined, { style:'currency', currency:'USD' });
+  }
+  function parsePrice(v) {
+    if (v == null) return NaN;
+    const s = v.toString().replace(/[^0-9.]/g, '');
+    return Number(s);
+  }
+
+  function hasPassword() { return !!STORE.getItem(K_CHECK); }
+
+  function showModal(mode) {
+    modalError.style.display = 'none';
+    unlockRow.style.display = 'none';
+    setRow.style.display = 'none';
+    changeRow.style.display = 'none';
+
+    if (mode === 'unlock') { unlockRow.style.display = ''; pwd.value = ''; pwd.focus(); modalOk.dataset.mode = 'unlock'; }
+    if (mode === 'set') { setRow.style.display = ''; newPwd.value = ''; newPwd2.value = ''; newPwd.focus(); modalOk.dataset.mode = 'set'; }
+    if (mode === 'change') { changeRow.style.display = ''; oldPwd.value = ''; chgPwd.value = ''; chgPwd2.value = ''; oldPwd.focus(); modalOk.dataset.mode = 'change'; }
+    modalBackdrop.style.display = 'flex';
+  }
+
+  function hideModal() { modalBackdrop.style.display = 'none'; }
+
+  function setRowLocked(key, locked) {
+    locks[key] = !!locked;
+    saveJson(K_LOCKS, locks);
+
+    const inp = document.querySelector('input.price[data-key="' + CSS.escape(key) + '"]');
+    const btn = document.querySelector('button.lock-btn[data-key="' + CSS.escape(key) + '"]');
+    if (!inp || !btn) return;
+
+    if (locked) {
+      inp.classList.add('locked');
+      inp.disabled = true;
+      btn.classList.add('locked');
+      btn.textContent = 'Unlock';
+    } else {
+      inp.classList.remove('locked');
+      inp.disabled = !unlocked;
+      btn.classList.remove('locked');
+      btn.textContent = 'Lock';
+    }
+  }
+
+  function enablePriceUI(enable) {
+    unlocked = enable;
+
+    document.querySelectorAll('input.price').forEach(inp => {
+      const key = inp.getAttribute('data-key') || '';
+      const rowLocked = !!locks[key];
+      inp.disabled = rowLocked ? true : !enable;
+      inp.placeholder = enable ? '\u00240.00' : '••••••';
+      if (!enable) inp.value = '';
+    });
+
+    document.querySelectorAll('button.lock-btn').forEach(btn => btn.disabled = !enable);
+    btnChange.disabled = !enable;
+    btnExport.disabled = !enable;
+  }
+
+  async function decryptAllAndPopulate() {
+    for (const inp of document.querySelectorAll('input.price')) {
+      const key = inp.getAttribute('data-key') || '';
+      const blob = pricesEnc[key];
+      if (!blob) continue;
+      inp.value = await decryptString(aesKey, blob);
+    }
+  }
+
+  async function encryptAndStore(keyStr, val) {
+    const blob = await encryptString(aesKey, val);
+    pricesEnc[keyStr] = blob;
+    saveJson(K_PRICES, pricesEnc);
+  }
+
+  async function createPassword(pass) {
+    const salt = await getOrCreateSalt();
+    const key = await deriveKeyFromPassword(pass, salt);
+    STORE.setItem(K_CHECK, await encryptString(key, 'ok'));
+    return key;
+  }
+
+  async function unlockWithPassword(pass) {
+    const salt = await getOrCreateSalt();
+    const key = await deriveKeyFromPassword(pass, salt);
+    const checkEnc = STORE.getItem(K_CHECK);
+    if (!checkEnc) throw new Error('No password set');
+    const check = await decryptString(key, checkEnc);
+    if (check !== 'ok') throw new Error('Wrong password');
+    return key;
+  }
+
+  function setModalError(msg) {
+    modalError.textContent = msg;
+    modalError.style.display = 'block';
+  }
+
+  async function handleModalOk() {
+    const mode = modalOk.dataset.mode;
+    try {
+      if (mode === 'unlock') {
+        if (!hasPassword()) { showModal('set'); return; }
+        aesKey = await unlockWithPassword(pwd.value);
+        hideModal(); enablePriceUI(true);
+        await decryptAllAndPopulate(); hydrateRowLocks(); updateTotals();
+      }
+      if (mode === 'set') {
+        if (newPwd.value.length < 6) throw new Error('Password must be at least 6 characters.');
+        if (newPwd.value !== newPwd2.value) throw new Error('Passwords do not match.');
+        aesKey = await createPassword(newPwd.value);
+        hideModal(); enablePriceUI(true); hydrateRowLocks(); updateTotals();
+      }
+      if (mode === 'change') {
+        if (!hasPassword()) throw new Error('No password is set yet.');
+        if (chgPwd.value.length < 6) throw new Error('New password must be at least 6 characters.');
+        if (chgPwd.value !== chgPwd2.value) throw new Error('New passwords do not match.');
+
+        const oldKey = await unlockWithPassword(oldPwd.value);
+
+        const decrypted = {};
+        for (const k in pricesEnc) decrypted[k] = await decryptString(oldKey, pricesEnc[k]);
+
+        const salt = await getOrCreateSalt();
+        const newKey = await deriveKeyFromPassword(chgPwd.value, salt);
+
+        const newEnc = {};
+        for (const k in decrypted) newEnc[k] = await encryptString(newKey, decrypted[k]);
+
+        pricesEnc = newEnc;
+        saveJson(K_PRICES, pricesEnc);
+        STORE.setItem(K_CHECK, await encryptString(newKey, 'ok'));
+
+        aesKey = newKey;
+        hideModal(); enablePriceUI(true);
+        await decryptAllAndPopulate(); hydrateRowLocks(); updateTotals();
+      }
+    } catch (e) {
+      setModalError(e.message || 'Something went wrong.');
+    }
+  }
+
+  function hydrateRowLocks() {
+    document.querySelectorAll('input.price').forEach(inp => {
+      const key = inp.getAttribute('data-key') || '';
+      setRowLocked(key, !!locks[key]);
+    });
+  }
+
+  function attachRowEvents() {
+    document.querySelectorAll('input.price').forEach(inp => {
+      const key = inp.getAttribute('data-key') || '';
+      inp.addEventListener('input', async () => {
+        if (!unlocked) return;
+        await encryptAndStore(key, inp.value);
+        updateTotals();
+      });
+      inp.addEventListener('blur', () => {
+        if (!unlocked) return;
+        if ((inp.value || '').trim() !== '') setRowLocked(key, true);
+      });
+      inp.addEventListener('keydown', (e) => {
+        if (!unlocked) return;
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if ((inp.value || '').trim() !== '') setRowLocked(key, true);
+          inp.blur();
+        }
+      });
+    });
+
+    document.querySelectorAll('button.lock-btn').forEach(btn => {
+      const key = btn.getAttribute('data-key') || '';
+      btn.addEventListener('click', () => {
+        if (!unlocked) return;
+        const locked = !!locks[key];
+        if (!locked) {
+          const inp = document.querySelector('input.price[data-key="' + CSS.escape(key) + '"]');
+          if (((inp && inp.value) || '').trim() === '') return;
+        }
+        setRowLocked(key, !locked);
+      });
+    });
+  }
+
+  function update() {
+    const q = norm(searchEl.value);
+    const cat = catEl.value;
+    let shown = 0;
+
+    Array.from(table.tBodies[0].rows).forEach(r => {
+      const catText = r.cells[0].textContent || '';
+      const itemText = r.cells[1].textContent || '';
+      const ok = ((cat === 'all') || (catText === cat)) &&
+                 (q === '' || norm(catText + ' ' + itemText).includes(q));
+      r.style.display = ok ? '' : 'none';
+      if (ok) shown += 1;
+    });
+
+    pill.textContent = shown + (shown === 1 ? ' result' : ' results');
+    updateTotals();
+  }
+
+  function updateTotals() {
+    if (!unlocked) {
+      pricedCountEl.textContent = '0';
+      totalValueEl.textContent = '\u00240.00';
+      return;
+    }
+    let pc = 0, tot = 0;
+    Array.from(table.tBodies[0].rows).filter(r => r.style.display !== 'none').forEach(r => {
+      const inp = r.querySelector('input.price');
+      if (!inp) return;
+      const p = parsePrice(inp.value);
+      if (isFinite(p) && p > 0) { pc += 1; tot += p; }
+    });
+    pricedCountEl.textContent = String(pc);
+    totalValueEl.textContent = currency(tot);
+  }
+
+  async function clearPrices() {
+    STORE.removeItem(K_PRICES);
+    STORE.removeItem(K_LOCKS);
+    pricesEnc = {};
+    locks = {};
+    saveJson(K_PRICES, pricesEnc);
+    saveJson(K_LOCKS, locks);
+    document.querySelectorAll('input.price').forEach(inp => inp.value = '');
+    hydrateRowLocks();
+    updateTotals();
+  }
+
+  function exportShareable() {
+    const payload = {
+      salt: STORE.getItem(K_SALT),
+      check: STORE.getItem(K_CHECK),
+      prices: STORE.getItem(K_PRICES),
+      locks: STORE.getItem(K_LOCKS),
+    };
+
+    let out = document.documentElement.outerHTML;
+    out = out.replace('const EMBEDDED_PAYLOAD = null;', 'const EMBEDDED_PAYLOAD = ' + JSON.stringify(payload) + ';');
+
+    const blob = new Blob([out], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Brandon_Millers_Coral_Inventory_SHAREABLE.html';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function init() {
+    enablePriceUI(false);
+    hydrateRowLocks();
+    attachRowEvents();
+    update();
+
+    btnUnlock.addEventListener('click', () => { if (!hasPassword()) showModal('set'); else showModal('unlock'); });
+    btnChange.addEventListener('click', () => showModal('change'));
+    btnClear.addEventListener('click', () => clearPrices());
+    btnExport.addEventListener('click', () => exportShareable());
+
+    modalCancel.addEventListener('click', hideModal);
+    modalOk.addEventListener('click', handleModalOk);
+
+    searchEl.addEventListener('input', update);
+    catEl.addEventListener('change', update);
+
+    if (STORE.mode === 'embedded') {
+      btnExport.disabled = true;
+      document.querySelector('.sub').innerHTML = "This is a <b>shareable</b> version. Click <b>Unlock Prices</b> and enter the password to view prices.";
+    }
+  }
+
+  init();
+})();
+</script>
+
+
+</body></html>
