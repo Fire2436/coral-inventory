@@ -1,0 +1,3310 @@
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brandon Miller's Coral Inventory Page</title>
+  <style>
+    :root {
+      --card: rgba(255,255,255,.07);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.65);
+      --border: rgba(255,255,255,.14);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+      --danger: rgba(255,100,100,.18);
+      --ok: rgba(140,255,190,.18);
+      --warn: rgba(255,220,140,.18);
+      --accent: rgba(120,180,255,.35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background:
+        radial-gradient(1100px 650px at 12% 12%, rgba(80,120,255,.24), transparent 60%),
+        radial-gradient(900px 600px at 85% 18%, rgba(0,255,200,.18), transparent 55%),
+        linear-gradient(180deg, #050812, #0b1220 35%, #070b16);
+      color: var(--text);
+      min-height:100vh;
+    }
+    header { padding:26px 16px 10px; max-width:1240px; margin:0 auto; }
+    h1 { margin:0 0 6px; font-size:28px; }
+    .sub { margin:0; color:var(--muted); font-size:14px; line-height:1.4; }
+    .wrap { max-width:1240px; margin:0 auto; padding:14px 16px 38px; }
+    .card {
+      background: var(--card);
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .controls {
+      display:grid;
+      grid-template-columns: 1.2fr .85fr 1.35fr .9fr .7fr .7fr .7fr .85fr;
+      gap:12px;
+      margin:14px 0 16px;
+      align-items: start;
+    }
+    @media (max-width:1240px) { .controls { grid-template-columns:1fr; } }
+    .control-card { padding:12px; }
+    label { display:block; font-size:12px; color:var(--muted); margin:0 0 6px; }
+    input, select, button, textarea {
+      width:100%;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      outline:none;
+    }
+    textarea { min-height: 44px; resize: vertical; }
+    input[readonly] { opacity:.9; }
+    button { cursor:pointer; font-weight:650; }
+    button:hover { background: rgba(255,255,255,.10); }
+    button:disabled, input:disabled, select:disabled, textarea:disabled { opacity:.6; cursor:not-allowed; }
+    .danger { background: var(--danger); border-color: rgba(255,140,140,.35); }
+    .ok { background: var(--ok); border-color: rgba(140,255,190,.35); }
+    .warn { background: var(--warn); border-color: rgba(255,220,140,.35); }
+
+    .notice {
+      margin-top: 10px; padding: 10px 12px; border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04);
+      color: var(--muted); font-size: 13px; line-height: 1.35;
+    }
+
+    .stats { display:grid; grid-template-columns: repeat(6, 1fr); gap:10px; padding:12px; margin-bottom:14px; }
+    @media (max-width:980px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+    .stat { padding:12px; border-radius:14px; border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
+    .stat .k { font-size:12px; color:var(--muted); }
+    .stat .v { font-size:20px; margin-top:4px; font-weight:650; }
+
+    .table-wrap { overflow:hidden; }
+    .table-head { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--border); }
+    .pill { display:inline-block; padding:5px 10px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.04); color: var(--muted); }
+    table { width:100%; border-collapse:separate; border-spacing:0; }
+    thead th { text-align:left; font-size:12px; color:var(--muted); padding:12px 14px; border-bottom:1px solid var(--border);
+      background: rgba(0,0,0,.16); position:sticky; top:0; z-index:1; }
+    tbody td { padding:11px 14px; border-bottom:1px solid rgba(255,255,255,.07); white-space:pre-wrap; word-break:break-word; vertical-align:top; }
+    tbody tr:hover td { background: rgba(255,255,255,.04); }
+    tbody tr.selected td { outline: 1px solid rgba(120,180,255,.55); background: rgba(120,180,255,.10); }
+    tbody tr.selected td:first-child { border-left: 3px solid rgba(120,180,255,.75); }
+
+    .thumb { width: 44px; height: 44px; border-radius: 12px; border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display:block; }
+    .thumb .ph { color: rgba(255,255,255,.55); font-size: 16px; }
+
+    .price-cell { display:grid; grid-template-columns: 1fr 92px 44px 44px; gap:10px; align-items:center; }
+    @media (max-width: 680px) { .price-cell { grid-template-columns: 1fr 78px 44px 44px; } }
+    input.price { padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.16); background: rgba(0,0,0,.18); color:var(--text); min-width:120px; }
+    input.price.locked { opacity:.85; border-color: rgba(255,255,255,.22); }
+    .lock-btn { width:92px; padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06); color:var(--text); font-weight:700; white-space:nowrap; }
+    .lock-btn.locked { background: rgba(255,255,255,.10); }
+    .mini-btn { width:44px; padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06); color:var(--text); font-weight:900; line-height:1; }
+    .mini-btn:hover { background: rgba(255,255,255,.10); }
+    .del-btn:hover { background: rgba(255,100,100,.18); border-color: rgba(255,140,140,.35); }
+
+    .img-actions { display:flex; gap:8px; align-items:center; }
+    .img-btn { width: 72px; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06); color: var(--text); font-weight: 800; line-height: 1; cursor: pointer; }
+    .img-btn:hover { background: rgba(255,255,255,.10); }
+
+    /* Customer page (cards) */
+    .customer-header { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+    .customer-header .left { flex: 1; }
+    .cta { display:flex; gap:10px; flex-wrap:wrap; }
+    .cta a { text-decoration:none; }
+    .cta .btn { display:inline-block; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06); color: var(--text); font-weight:800; }
+    .cta .btn:hover { background: rgba(255,255,255,.10); }
+
+    .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; }
+    @media (max-width:1100px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width:640px) { .grid { grid-template-columns: 1fr; } }
+    .item-card { padding:12px; }
+    .hero { width:100%; height: 190px; border-radius:16px; border:1px solid rgba(255,255,255,.14); overflow:hidden; background: rgba(0,0,0,.18); display:flex; align-items:center; justify-content:center; }
+    .hero img { width:100%; height:100%; object-fit:cover; display:block; }
+    .hero .ph { color: rgba(255,255,255,.55); font-size:18px; }
+    .line { display:flex; justify-content:space-between; gap:10px; margin-top:10px; align-items:flex-start; }
+    .name { font-weight:850; }
+    .meta { color: var(--muted); font-size:12px; margin-top:2px; }
+    .badge { display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.04); color: rgba(255,255,255,.80); }
+    .badge.sold { background: rgba(255,100,100,.15); border-color: rgba(255,140,140,.30); }
+    .badge.pending { background: rgba(255,220,140,.14); border-color: rgba(255,220,140,.30); }
+    .badge.available { background: rgba(140,255,190,.14); border-color: rgba(140,255,190,.30); }
+    .price-tag { font-weight:900; }
+    .notes { margin-top:8px; color: rgba(255,255,255,.78); font-size:13px; line-height:1.35; min-height: 18px; }
+    .actions { display:flex; gap:10px; margin-top:10px; }
+    .actions button { width:auto; flex:1; }
+    .claim { position: fixed; right: 16px; bottom: 16px; width: min(420px, calc(100vw - 32px)); z-index: 60; display:none; }
+    .claim .inner { padding:12px; }
+    .claim h3 { margin: 0 0 8px; font-size: 16px; }
+    .claim-list { max-height: 220px; overflow:auto; border:1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 8px; background: rgba(0,0,0,.18); }
+    .claim-row { display:flex; justify-content:space-between; gap:10px; padding:6px 2px; border-bottom:1px solid rgba(255,255,255,.07); }
+    .claim-row:last-child { border-bottom:none; }
+    .claim-row small { color: var(--muted); }
+    .claim-actions { display:flex; gap:10px; margin-top:10px; }
+    .claim-actions button { flex:1; }
+    .claim-total { display:flex; justify-content:space-between; margin-top:10px; color: var(--muted); font-size: 13px; }
+    .tiny { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .footer { margin-top:12px; color:var(--muted); font-size:12px; text-align:center; }
+
+    /* Modal */
+    .modal-backdrop { position:fixed; inset:0; background: rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; padding:16px; z-index:70; }
+    .modal { width:100%; max-width:560px; padding:16px; }
+    .modal h2 { margin:0 0 8px; font-size:18px; }
+    .modal p { margin:0 0 12px; color:var(--muted); font-size:13px; line-height:1.4; }
+    .modal .row { display:grid; grid-template-columns:1fr; gap:10px; }
+    .modal .actions { display:flex; gap:10px; margin-top:12px; }
+    .modal .actions button { flex:1; }
+    .error { color:#ffb4b4; font-size:13px; margin-top:10px; display:none; }
+    .bigimg { width: 100%; max-height: 65vh; object-fit: contain; border-radius: 14px; border: 1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.18); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="customer-header">
+      <div class="left">
+        <h1>Brandon Miller's Coral Inventory Page</h1>
+        <p class="sub" id="modeLine"><b>MASTER EDITOR</b> — manage corals + export a customer page that lets people build a “claim list” and text you to buy.</p>
+        <div class="notice" id="noticeBox">
+          <b>Customer page features:</b> big photos, filters, “Add to Claim List”, and a <b>Text to Buy</b> button to (419)890-6572.
+        </div>
+      </div>
+      <div class="cta" id="customerCtas" style="display:none;">
+        <a id="callLink" class="btn" href="tel:+14198906572">Call</a>
+        <a id="textLink" class="btn" href="sms:+14198906572">Text to Buy</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap" id="editorWrap">
+    <div class="controls">
+      <div class="card control-card">
+        <label for="search">Search</label>
+        <input id="search" type="text" placeholder="Type to search...">
+      </div>
+
+      <div class="card control-card">
+        <label for="category">Category</label>
+        <select id="category">
+          <option value="all">All categories</option>
+          <option value="SPS">SPS</option><option value="LPS">LPS</option><option value="Softies">Softies</option><option value="Zoanthids">Zoanthids</option>
+        </select>
+      </div>
+
+      <div class="card control-card">
+        <label for="quickUrl">Quick Photo Link</label>
+        <input id="quickUrl" type="text" placeholder="Paste image link (GitHub “Copy image link” works great)">
+        <div class="mini-row" style="margin-top:10px;">
+          <button id="applyUrl" type="button" disabled="">Apply</button>
+          <button id="clearUrl" type="button" disabled="" class="danger">Clear</button>
+        </div>
+      </div>
+
+      <div class="card control-card">
+        <label for="selectedItem">Selected</label>
+        <input id="selectedItem" type="text" readonly="" value="(click a row)">
+      </div>
+
+      <div class="card control-card"><label>&nbsp;</label><button id="unlock" type="button">Unlocked</button></div>
+      <div class="card control-card"><label>&nbsp;</label><button id="addItem" type="button">Add</button></div>
+      <div class="card control-card"><label>&nbsp;</label><button id="exportCustomer" type="button" class="ok">Export Customer Page</button></div>
+      <div class="card control-card"><label>&nbsp;</label><button id="moreBtn" type="button">More</button></div>
+    </div>
+
+    <div class="card stats" id="statsBar" aria-label="Counts and totals">
+      <div class="stat"><div class="k">SPS</div><div class="v">27</div></div>
+    
+      <div class="stat"><div class="k">LPS</div><div class="v">15</div></div>
+    
+      <div class="stat"><div class="k">Softies</div><div class="v">6</div></div>
+    
+      <div class="stat"><div class="k">Zoanthids</div><div class="v">28</div></div>
+    
+      <div class="stat"><div class="k">Available</div><div class="v">76</div></div>
+      <div class="stat"><div class="k">Pending</div><div class="v">0</div></div>
+      <div class="stat"><div class="k">Sold</div><div class="v">0</div></div>
+      <div class="stat"><div class="k">Photo links</div><div class="v">4</div></div>
+    </div>
+
+    <div class="card table-wrap">
+      <div class="table-head">
+        <div style="font-weight:650;">Inventory (click a row to select)</div>
+        <div class="pill" id="resultsPill">76 results</div>
+      </div>
+      <div style="overflow:auto; max-height: 65vh;">
+        <table id="coralTable">
+          <thead>
+            <tr>
+              <th style="width:140px;">Category</th>
+              <th style="width:160px;">Photo</th>
+              <th>Item</th>
+              <th style="width:140px;">Status</th>
+              <th>Notes</th>
+              <th style="width:420px;">Price</th>
+            </tr>
+          </thead>
+          <tbody><tr data-key="LPS|BKChem The Grinch torch">
+        <td>LPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="LPS|BKChem The Grinch torch" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="LPS|BKChem The Grinch torch">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="LPS|BKChem The Grinch torch" disabled="">✕</button>
+          </div>
+        </td>
+        <td>BKChem The Grinch torch</td>
+        <td>
+          <select class="status" data-key="LPS|BKChem The Grinch torch">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="LPS|BKChem The Grinch torch" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="LPS|BKChem The Grinch torch">
+          <button class="lock-btn " type="button" data-key="LPS|BKChem The Grinch torch">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="LPS|BKChem The Grinch torch">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="LPS|BKChem The Grinch torch">✕</button>
+        </td>
+      </tr><tr data-key="LPS|Blue raven blastos">
+        <td>LPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="LPS|Blue raven blastos" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="LPS|Blue raven blastos">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="LPS|Blue raven blastos" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Blue raven blastos</td>
+        <td>
+          <select class="status" data-key="LPS|Blue raven blastos">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="LPS|Blue raven blastos" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="LPS|Blue raven blastos">
+          <button class="lock-btn " type="button" data-key="LPS|Blue raven blastos">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="LPS|Blue raven blastos">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="LPS|Blue raven blastos">✕</button>
+        </td>
+      </tr><tr data-key="LPS|Dragon Soul torch">
+        <td>LPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="LPS|Dragon Soul torch" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="LPS|Dragon Soul torch">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="LPS|Dragon Soul torch" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Dragon Soul torch</td>
+        <td>
+          <select class="status" data-key="LPS|Dragon Soul torch">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="LPS|Dragon Soul torch" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="LPS|Dragon Soul torch">
+          <button class="lock-btn " type="button" data-key="LPS|Dragon Soul torch">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="LPS|Dragon Soul torch">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="LPS|Dragon Soul torch">✕</button>
+        </td>
+      </tr><tr data-key="LPS|Dragon Tamer torch">
+        <td>LPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="LPS|Dragon Tamer torch" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="LPS|Dragon Tamer torch">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="LPS|Dragon Tamer torch" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Dragon Tamer torch</td>
+        <td>
+          <select class="status" data-key="LPS|Dragon Tamer torch">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="LPS|Dragon Tamer torch" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="LPS|Dragon Tamer torch">
+          <button class="lock-btn " type="button" data-key="LPS|Dragon Tamer torch">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="LPS|Dragon Tamer torch">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="LPS|Dragon Tamer torch">✕</button>
+        </td>
+      </tr><tr data-key="LPS|Green w/blue tip hammer">
+        <td>LPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="LPS|Green w/blue tip hammer" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="LPS|Green w/blue tip hammer">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="LPS|Green w/blue tip hammer" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Green w/blue tip hammer</td>
+        <td>
+          <select class="status" data-key="LPS|Green w/blue tip hammer">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="LPS|Green w/blue tip hammer" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="LPS|Green w/blue tip hammer">
+          <button class="lock-btn " type="button" data-key="LPS|Green w/blue tip hammer">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="LPS|Green w/blue tip hammer">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="LPS|Green w/blue tip hammer">✕</button>
+        </td>
+      </tr><tr data-key="LPS|Hologram Hammer">
+        <td>LPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="LPS|Hologram Hammer" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="LPS|Hologram Hammer">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="LPS|Hologram Hammer" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Hologram Hammer</td>
+        <td>
+          <select class="status" data-key="LPS|Hologram Hammer">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="LPS|Hologram Hammer" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="LPS|Hologram Hammer">
+          <button class="lock-btn " type="button" data-key="LPS|Hologram Hammer">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="LPS|Hologram Hammer">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="LPS|Hologram Hammer">✕</button>
+        </td>
+      </tr><tr data-key="LPS|Holy Grail torch">
+        <td>LPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="LPS|Holy Grail torch" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="LPS|Holy Grail torch">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="LPS|Holy Grail torch" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Holy Grail torch</td>
+        <td>
+          <select class="status" data-key="LPS|Holy Grail torch">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="LPS|Holy Grail torch" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price locked" inputmode="decimal" placeholder="$0.00" data-key="LPS|Holy Grail torch" disabled="">
+          <button class="lock-btn locked" type="button" data-key="LPS|Holy Grail torch">Unlock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="LPS|Holy Grail torch">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="LPS|Holy Grail torch">✕</button>
+        </td>
+      </tr><tr data-key="LPS|Holy Moly torch">
+        <td>LPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="LPS|Holy Moly torch" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="LPS|Holy Moly torch">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="LPS|Holy Moly torch" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Holy Moly torch</td>
+        <td>
+          <select class="status" data-key="LPS|Holy Moly torch">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="LPS|Holy Moly torch" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="LPS|Holy Moly torch">
+          <button class="lock-btn " type="button" data-key="LPS|Holy Moly torch">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="LPS|Holy Moly torch">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="LPS|Holy Moly torch">✕</button>
+        </td>
+      </tr><tr data-key="LPS|Laffy Taffy goni">
+        <td>LPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="LPS|Laffy Taffy goni" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="LPS|Laffy Taffy goni">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="LPS|Laffy Taffy goni" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Laffy Taffy goni</td>
+        <td>
+          <select class="status" data-key="LPS|Laffy Taffy goni">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="LPS|Laffy Taffy goni" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="LPS|Laffy Taffy goni">
+          <button class="lock-btn " type="button" data-key="LPS|Laffy Taffy goni">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="LPS|Laffy Taffy goni">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="LPS|Laffy Taffy goni">✕</button>
+        </td>
+      </tr><tr data-key="LPS|NY Knicks torch">
+        <td>LPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="LPS|NY Knicks torch" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="LPS|NY Knicks torch">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="LPS|NY Knicks torch" disabled="">✕</button>
+          </div>
+        </td>
+        <td>NY Knicks torch</td>
+        <td>
+          <select class="status" data-key="LPS|NY Knicks torch">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="LPS|NY Knicks torch" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="LPS|NY Knicks torch">
+          <button class="lock-btn " type="button" data-key="LPS|NY Knicks torch">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="LPS|NY Knicks torch">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="LPS|NY Knicks torch">✕</button>
+        </td>
+      </tr><tr data-key="LPS|Pink and yellow goni">
+        <td>LPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="LPS|Pink and yellow goni" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="LPS|Pink and yellow goni">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="LPS|Pink and yellow goni" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Pink and yellow goni</td>
+        <td>
+          <select class="status" data-key="LPS|Pink and yellow goni">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="LPS|Pink and yellow goni" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="LPS|Pink and yellow goni">
+          <button class="lock-btn " type="button" data-key="LPS|Pink and yellow goni">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="LPS|Pink and yellow goni">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="LPS|Pink and yellow goni">✕</button>
+        </td>
+      </tr><tr data-key="LPS|Rainbow acan">
+        <td>LPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="LPS|Rainbow acan" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="LPS|Rainbow acan">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="LPS|Rainbow acan" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Rainbow acan</td>
+        <td>
+          <select class="status" data-key="LPS|Rainbow acan">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="LPS|Rainbow acan" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="LPS|Rainbow acan">
+          <button class="lock-btn " type="button" data-key="LPS|Rainbow acan">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="LPS|Rainbow acan">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="LPS|Rainbow acan">✕</button>
+        </td>
+      </tr><tr data-key="LPS|Rainbow chalice">
+        <td>LPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="LPS|Rainbow chalice" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="LPS|Rainbow chalice">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="LPS|Rainbow chalice" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Rainbow chalice</td>
+        <td>
+          <select class="status" data-key="LPS|Rainbow chalice">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="LPS|Rainbow chalice" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="LPS|Rainbow chalice">
+          <button class="lock-btn " type="button" data-key="LPS|Rainbow chalice">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="LPS|Rainbow chalice">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="LPS|Rainbow chalice">✕</button>
+        </td>
+      </tr><tr data-key="LPS|TCK Master torch">
+        <td>LPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="LPS|TCK Master torch" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="LPS|TCK Master torch">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="LPS|TCK Master torch" disabled="">✕</button>
+          </div>
+        </td>
+        <td>TCK Master torch</td>
+        <td>
+          <select class="status" data-key="LPS|TCK Master torch">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="LPS|TCK Master torch" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="LPS|TCK Master torch">
+          <button class="lock-btn " type="button" data-key="LPS|TCK Master torch">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="LPS|TCK Master torch">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="LPS|TCK Master torch">✕</button>
+        </td>
+      </tr><tr data-key="LPS|WWC Grafted Montipora cap">
+        <td>LPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="LPS|WWC Grafted Montipora cap" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="LPS|WWC Grafted Montipora cap">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="LPS|WWC Grafted Montipora cap" disabled="">✕</button>
+          </div>
+        </td>
+        <td>WWC Grafted Montipora cap</td>
+        <td>
+          <select class="status" data-key="LPS|WWC Grafted Montipora cap">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="LPS|WWC Grafted Montipora cap" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="LPS|WWC Grafted Montipora cap">
+          <button class="lock-btn " type="button" data-key="LPS|WWC Grafted Montipora cap">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="LPS|WWC Grafted Montipora cap">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="LPS|WWC Grafted Montipora cap">✕</button>
+        </td>
+      </tr><tr data-key="Softies|Alveapora">
+        <td>Softies</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Softies|Alveapora" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Softies|Alveapora">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Softies|Alveapora" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Alveapora</td>
+        <td>
+          <select class="status" data-key="Softies|Alveapora">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Softies|Alveapora" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price locked" inputmode="decimal" placeholder="$0.00" data-key="Softies|Alveapora" disabled="">
+          <button class="lock-btn locked" type="button" data-key="Softies|Alveapora">Unlock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Softies|Alveapora">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Softies|Alveapora">✕</button>
+        </td>
+      </tr><tr data-key="Softies|Cloves">
+        <td>Softies</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Softies|Cloves" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Softies|Cloves">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Softies|Cloves" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Cloves</td>
+        <td>
+          <select class="status" data-key="Softies|Cloves">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Softies|Cloves" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Softies|Cloves">
+          <button class="lock-btn " type="button" data-key="Softies|Cloves">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Softies|Cloves">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Softies|Cloves">✕</button>
+        </td>
+      </tr><tr data-key="Softies|Jaw breaker mushroom">
+        <td>Softies</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Softies|Jaw breaker mushroom" title="Click to view">
+              <img alt="photo" src="https://raw.githubusercontent.com/fire2436/coral-inventory/main/images/Jawbreakermushroom.png" onerror="this.closest('.thumb').innerHTML='&lt;div class='ph'&gt;⚠️&lt;/div&gt;'">
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Softies|Jaw breaker mushroom">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Softies|Jaw breaker mushroom">✕</button>
+          </div>
+        </td>
+        <td>Jaw breaker mushroom</td>
+        <td>
+          <select class="status" data-key="Softies|Jaw breaker mushroom">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Softies|Jaw breaker mushroom" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Softies|Jaw breaker mushroom">
+          <button class="lock-btn " type="button" data-key="Softies|Jaw breaker mushroom">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Softies|Jaw breaker mushroom">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Softies|Jaw breaker mushroom">✕</button>
+        </td>
+      </tr><tr data-key="Softies|Pulsing Xenia">
+        <td>Softies</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Softies|Pulsing Xenia" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Softies|Pulsing Xenia">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Softies|Pulsing Xenia" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Pulsing Xenia</td>
+        <td>
+          <select class="status" data-key="Softies|Pulsing Xenia">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Softies|Pulsing Xenia" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Softies|Pulsing Xenia">
+          <button class="lock-btn " type="button" data-key="Softies|Pulsing Xenia">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Softies|Pulsing Xenia">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Softies|Pulsing Xenia">✕</button>
+        </td>
+      </tr><tr data-key="Softies|Sunkist bounce mushrom">
+        <td>Softies</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Softies|Sunkist bounce mushrom" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Softies|Sunkist bounce mushrom">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Softies|Sunkist bounce mushrom" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Sunkist bounce mushrom</td>
+        <td>
+          <select class="status" data-key="Softies|Sunkist bounce mushrom">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Softies|Sunkist bounce mushrom" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Softies|Sunkist bounce mushrom">
+          <button class="lock-btn " type="button" data-key="Softies|Sunkist bounce mushrom">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Softies|Sunkist bounce mushrom">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Softies|Sunkist bounce mushrom">✕</button>
+        </td>
+      </tr><tr data-key="Softies|Ultra kenya">
+        <td>Softies</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Softies|Ultra kenya" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Softies|Ultra kenya">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Softies|Ultra kenya" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Ultra kenya</td>
+        <td>
+          <select class="status" data-key="Softies|Ultra kenya">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Softies|Ultra kenya" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Softies|Ultra kenya">
+          <button class="lock-btn " type="button" data-key="Softies|Ultra kenya">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Softies|Ultra kenya">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Softies|Ultra kenya">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Back Draft">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Back Draft" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Back Draft">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Back Draft" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Back Draft</td>
+        <td>
+          <select class="status" data-key="SPS|Back Draft">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Back Draft" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Back Draft">
+          <button class="lock-btn " type="button" data-key="SPS|Back Draft">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Back Draft">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Back Draft">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Blue milli (aquacultured)">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Blue milli (aquacultured)" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Blue milli (aquacultured)">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Blue milli (aquacultured)" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Blue milli (aquacultured)</td>
+        <td>
+          <select class="status" data-key="SPS|Blue milli (aquacultured)">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Blue milli (aquacultured)" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Blue milli (aquacultured)">
+          <button class="lock-btn " type="button" data-key="SPS|Blue milli (aquacultured)">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Blue milli (aquacultured)">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Blue milli (aquacultured)">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Blue Ten-yyy">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Blue Ten-yyy" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Blue Ten-yyy">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Blue Ten-yyy" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Blue Ten-yyy</td>
+        <td>
+          <select class="status" data-key="SPS|Blue Ten-yyy">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Blue Ten-yyy" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Blue Ten-yyy">
+          <button class="lock-btn " type="button" data-key="SPS|Blue Ten-yyy">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Blue Ten-yyy">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Blue Ten-yyy">✕</button>
+        </td>
+      </tr><tr data-key="SPS|CB the thing anacropora">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|CB the thing anacropora" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|CB the thing anacropora">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|CB the thing anacropora" disabled="">✕</button>
+          </div>
+        </td>
+        <td>CB the thing anacropora</td>
+        <td>
+          <select class="status" data-key="SPS|CB the thing anacropora">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|CB the thing anacropora" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|CB the thing anacropora">
+          <button class="lock-btn " type="button" data-key="SPS|CB the thing anacropora">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|CB the thing anacropora">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|CB the thing anacropora">✕</button>
+        </td>
+      </tr><tr data-key="SPS|CC dark knight">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|CC dark knight" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|CC dark knight">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|CC dark knight" disabled="">✕</button>
+          </div>
+        </td>
+        <td>CC dark knight</td>
+        <td>
+          <select class="status" data-key="SPS|CC dark knight">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|CC dark knight" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|CC dark knight">
+          <button class="lock-btn " type="button" data-key="SPS|CC dark knight">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|CC dark knight">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|CC dark knight">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Cherry Bomb">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Cherry Bomb" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Cherry Bomb">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Cherry Bomb" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Cherry Bomb</td>
+        <td>
+          <select class="status" data-key="SPS|Cherry Bomb">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Cherry Bomb" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Cherry Bomb">
+          <button class="lock-btn " type="button" data-key="SPS|Cherry Bomb">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Cherry Bomb">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Cherry Bomb">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Fox Flame">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Fox Flame" title="Click to view">
+              <img alt="photo" src="https://github.com/Fire2436/coral-inventory/blob/main/images/FoxFlame.jpg?raw=true" onerror="this.closest('.thumb').innerHTML='&lt;div class='ph'&gt;⚠️&lt;/div&gt;'">
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Fox Flame">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Fox Flame">✕</button>
+          </div>
+        </td>
+        <td>Fox Flame</td>
+        <td>
+          <select class="status" data-key="SPS|Fox Flame">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Fox Flame" placeholder="short notes (size, lighting, etc.)">small frag</textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price locked" inputmode="decimal" placeholder="$0.00" data-key="SPS|Fox Flame" disabled="">
+          <button class="lock-btn locked" type="button" data-key="SPS|Fox Flame">Unlock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Fox Flame">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Fox Flame">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Grizzly Adams">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Grizzly Adams" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Grizzly Adams">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Grizzly Adams" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Grizzly Adams</td>
+        <td>
+          <select class="status" data-key="SPS|Grizzly Adams">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Grizzly Adams" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Grizzly Adams">
+          <button class="lock-btn " type="button" data-key="SPS|Grizzly Adams">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Grizzly Adams">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Grizzly Adams">✕</button>
+        </td>
+      </tr><tr data-key="SPS|JF Homewreaker">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|JF Homewreaker" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|JF Homewreaker">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|JF Homewreaker" disabled="">✕</button>
+          </div>
+        </td>
+        <td>JF Homewreaker</td>
+        <td>
+          <select class="status" data-key="SPS|JF Homewreaker">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|JF Homewreaker" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|JF Homewreaker">
+          <button class="lock-btn " type="button" data-key="SPS|JF Homewreaker">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|JF Homewreaker">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|JF Homewreaker">✕</button>
+        </td>
+      </tr><tr data-key="SPS|JF Jolt">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|JF Jolt" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|JF Jolt">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|JF Jolt" disabled="">✕</button>
+          </div>
+        </td>
+        <td>JF Jolt</td>
+        <td>
+          <select class="status" data-key="SPS|JF Jolt">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|JF Jolt" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|JF Jolt">
+          <button class="lock-btn " type="button" data-key="SPS|JF Jolt">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|JF Jolt">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|JF Jolt">✕</button>
+        </td>
+      </tr><tr data-key="SPS|PC Superman">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|PC Superman" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|PC Superman">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|PC Superman" disabled="">✕</button>
+          </div>
+        </td>
+        <td>PC Superman</td>
+        <td>
+          <select class="status" data-key="SPS|PC Superman">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|PC Superman" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price locked" inputmode="decimal" placeholder="$0.00" data-key="SPS|PC Superman" disabled="">
+          <button class="lock-btn locked" type="button" data-key="SPS|PC Superman">Unlock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|PC Superman">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|PC Superman">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Pikachu">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Pikachu" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Pikachu">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Pikachu" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Pikachu</td>
+        <td>
+          <select class="status" data-key="SPS|Pikachu">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Pikachu" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Pikachu">
+          <button class="lock-btn " type="button" data-key="SPS|Pikachu">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Pikachu">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Pikachu">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Pink cadillac">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Pink cadillac" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Pink cadillac">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Pink cadillac" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Pink cadillac</td>
+        <td>
+          <select class="status" data-key="SPS|Pink cadillac">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Pink cadillac" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Pink cadillac">
+          <button class="lock-btn " type="button" data-key="SPS|Pink cadillac">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Pink cadillac">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Pink cadillac">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Pink floyd">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Pink floyd" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Pink floyd">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Pink floyd" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Pink floyd</td>
+        <td>
+          <select class="status" data-key="SPS|Pink floyd">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Pink floyd" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Pink floyd">
+          <button class="lock-btn " type="button" data-key="SPS|Pink floyd">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Pink floyd">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Pink floyd">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Pink Highlighter">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Pink Highlighter" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Pink Highlighter">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Pink Highlighter" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Pink Highlighter</td>
+        <td>
+          <select class="status" data-key="SPS|Pink Highlighter">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Pink Highlighter" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Pink Highlighter">
+          <button class="lock-btn " type="button" data-key="SPS|Pink Highlighter">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Pink Highlighter">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Pink Highlighter">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Rainbow Loom">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Rainbow Loom" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Rainbow Loom">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Rainbow Loom" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Rainbow Loom</td>
+        <td>
+          <select class="status" data-key="SPS|Rainbow Loom">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Rainbow Loom" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Rainbow Loom">
+          <button class="lock-btn " type="button" data-key="SPS|Rainbow Loom">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Rainbow Loom">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Rainbow Loom">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Rainbow Splice">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Rainbow Splice" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Rainbow Splice">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Rainbow Splice" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Rainbow Splice</td>
+        <td>
+          <select class="status" data-key="SPS|Rainbow Splice">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Rainbow Splice" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Rainbow Splice">
+          <button class="lock-btn " type="button" data-key="SPS|Rainbow Splice">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Rainbow Splice">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Rainbow Splice">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Red Handed Tenuous">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Red Handed Tenuous" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Red Handed Tenuous">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Red Handed Tenuous" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Red Handed Tenuous</td>
+        <td>
+          <select class="status" data-key="SPS|Red Handed Tenuous">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Red Handed Tenuous" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Red Handed Tenuous">
+          <button class="lock-btn " type="button" data-key="SPS|Red Handed Tenuous">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Red Handed Tenuous">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Red Handed Tenuous">✕</button>
+        </td>
+      </tr><tr data-key="SPS|RMF tigers blood">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|RMF tigers blood" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|RMF tigers blood">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|RMF tigers blood" disabled="">✕</button>
+          </div>
+        </td>
+        <td>RMF tigers blood</td>
+        <td>
+          <select class="status" data-key="SPS|RMF tigers blood">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|RMF tigers blood" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|RMF tigers blood">
+          <button class="lock-btn " type="button" data-key="SPS|RMF tigers blood">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|RMF tigers blood">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|RMF tigers blood">✕</button>
+        </td>
+      </tr><tr data-key="SPS|SBB Heisenberg">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|SBB Heisenberg" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|SBB Heisenberg">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|SBB Heisenberg" disabled="">✕</button>
+          </div>
+        </td>
+        <td>SBB Heisenberg</td>
+        <td>
+          <select class="status" data-key="SPS|SBB Heisenberg">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|SBB Heisenberg" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|SBB Heisenberg">
+          <button class="lock-btn " type="button" data-key="SPS|SBB Heisenberg">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|SBB Heisenberg">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|SBB Heisenberg">✕</button>
+        </td>
+      </tr><tr data-key="SPS|SC Orange Passion">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|SC Orange Passion" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|SC Orange Passion">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|SC Orange Passion" disabled="">✕</button>
+          </div>
+        </td>
+        <td>SC Orange Passion</td>
+        <td>
+          <select class="status" data-key="SPS|SC Orange Passion">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|SC Orange Passion" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|SC Orange Passion">
+          <button class="lock-btn " type="button" data-key="SPS|SC Orange Passion">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|SC Orange Passion">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|SC Orange Passion">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Side Chick">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Side Chick" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Side Chick">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Side Chick" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Side Chick</td>
+        <td>
+          <select class="status" data-key="SPS|Side Chick">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Side Chick" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Side Chick">
+          <button class="lock-btn " type="button" data-key="SPS|Side Chick">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Side Chick">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Side Chick">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Superman table">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Superman table" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Superman table">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Superman table" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Superman table</td>
+        <td>
+          <select class="status" data-key="SPS|Superman table">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Superman table" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Superman table">
+          <button class="lock-btn " type="button" data-key="SPS|Superman table">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Superman table">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Superman table">✕</button>
+        </td>
+      </tr><tr data-key="SPS|TSA Rainbow sherbert">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|TSA Rainbow sherbert" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|TSA Rainbow sherbert">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|TSA Rainbow sherbert" disabled="">✕</button>
+          </div>
+        </td>
+        <td>TSA Rainbow sherbert</td>
+        <td>
+          <select class="status" data-key="SPS|TSA Rainbow sherbert">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|TSA Rainbow sherbert" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|TSA Rainbow sherbert">
+          <button class="lock-btn " type="button" data-key="SPS|TSA Rainbow sherbert">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|TSA Rainbow sherbert">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|TSA Rainbow sherbert">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Vivids confetti">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Vivids confetti" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Vivids confetti">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Vivids confetti" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Vivids confetti</td>
+        <td>
+          <select class="status" data-key="SPS|Vivids confetti">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Vivids confetti" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Vivids confetti">
+          <button class="lock-btn " type="button" data-key="SPS|Vivids confetti">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Vivids confetti">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Vivids confetti">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Walt Disney">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Walt Disney" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Walt Disney">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Walt Disney" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Walt Disney</td>
+        <td>
+          <select class="status" data-key="SPS|Walt Disney">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Walt Disney" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Walt Disney">
+          <button class="lock-btn " type="button" data-key="SPS|Walt Disney">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Walt Disney">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Walt Disney">✕</button>
+        </td>
+      </tr><tr data-key="SPS|Yellow Lokani">
+        <td>SPS</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="SPS|Yellow Lokani" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="SPS|Yellow Lokani">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="SPS|Yellow Lokani" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Yellow Lokani</td>
+        <td>
+          <select class="status" data-key="SPS|Yellow Lokani">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="SPS|Yellow Lokani" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="SPS|Yellow Lokani">
+          <button class="lock-btn " type="button" data-key="SPS|Yellow Lokani">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="SPS|Yellow Lokani">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="SPS|Yellow Lokani">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|ACI Lorax">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|ACI Lorax" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|ACI Lorax">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|ACI Lorax" disabled="">✕</button>
+          </div>
+        </td>
+        <td>ACI Lorax</td>
+        <td>
+          <select class="status" data-key="Zoanthids|ACI Lorax">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|ACI Lorax" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|ACI Lorax">
+          <button class="lock-btn " type="button" data-key="Zoanthids|ACI Lorax">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|ACI Lorax">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|ACI Lorax">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|AIO's">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|AIO's" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|AIO's">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|AIO's" disabled="">✕</button>
+          </div>
+        </td>
+        <td>AIO's</td>
+        <td>
+          <select class="status" data-key="Zoanthids|AIO's">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|AIO's" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|AIO's">
+          <button class="lock-btn " type="button" data-key="Zoanthids|AIO's">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|AIO's">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|AIO's">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Bam bam extreme">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Bam bam extreme" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Bam bam extreme">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Bam bam extreme" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Bam bam extreme</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Bam bam extreme">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Bam bam extreme" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Bam bam extreme">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Bam bam extreme">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Bam bam extreme">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Bam bam extreme">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Bambams">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Bambams" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Bambams">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Bambams" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Bambams</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Bambams">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Bambams" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Bambams">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Bambams">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Bambams">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Bambams">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Burning ember">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Burning ember" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Burning ember">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Burning ember" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Burning ember</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Burning ember">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Burning ember" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Burning ember">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Burning ember">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Burning ember">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Burning ember">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Daisy Cutters">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Daisy Cutters" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Daisy Cutters">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Daisy Cutters" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Daisy Cutters</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Daisy Cutters">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Daisy Cutters" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Daisy Cutters">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Daisy Cutters">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Daisy Cutters">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Daisy Cutters">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Extreme utter chaos">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Extreme utter chaos" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Extreme utter chaos">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Extreme utter chaos" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Extreme utter chaos</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Extreme utter chaos">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Extreme utter chaos" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Extreme utter chaos">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Extreme utter chaos">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Extreme utter chaos">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Extreme utter chaos">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Fairy Farts">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Fairy Farts" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Fairy Farts">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Fairy Farts" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Fairy Farts</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Fairy Farts">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Fairy Farts" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Fairy Farts">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Fairy Farts">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Fairy Farts">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Fairy Farts">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Frozen Apples">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Frozen Apples" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Frozen Apples">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Frozen Apples" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Frozen Apples</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Frozen Apples">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Frozen Apples" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Frozen Apples">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Frozen Apples">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Frozen Apples">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Frozen Apples">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Fruit Loops">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Fruit Loops" title="Click to view">
+              <img alt="photo" src="https://github.com/Fire2436/coral-inventory/blob/main/images/FruitLoops.jpg?raw=true" onerror="this.closest('.thumb').innerHTML='&lt;div class='ph'&gt;⚠️&lt;/div&gt;'">
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Fruit Loops">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Fruit Loops">✕</button>
+          </div>
+        </td>
+        <td>Fruit Loops</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Fruit Loops">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Fruit Loops" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Fruit Loops">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Fruit Loops">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Fruit Loops">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Fruit Loops">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|GMK">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|GMK" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|GMK">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|GMK" disabled="">✕</button>
+          </div>
+        </td>
+        <td>GMK</td>
+        <td>
+          <select class="status" data-key="Zoanthids|GMK">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|GMK" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|GMK">
+          <button class="lock-btn " type="button" data-key="Zoanthids|GMK">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|GMK">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|GMK">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Goblins on Fire">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Goblins on Fire" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Goblins on Fire">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Goblins on Fire" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Goblins on Fire</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Goblins on Fire">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Goblins on Fire" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Goblins on Fire">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Goblins on Fire">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Goblins on Fire">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Goblins on Fire">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Great owl">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Great owl" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Great owl">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Great owl" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Great owl</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Great owl">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Great owl" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Great owl">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Great owl">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Great owl">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Great owl">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Hurricane">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Hurricane" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Hurricane">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Hurricane" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Hurricane</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Hurricane">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Hurricane" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Hurricane">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Hurricane">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Hurricane">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Hurricane">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Jungle Juice">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Jungle Juice" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Jungle Juice">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Jungle Juice" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Jungle Juice</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Jungle Juice">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Jungle Juice" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Jungle Juice">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Jungle Juice">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Jungle Juice">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Jungle Juice">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Lazy’s Lashes">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Lazy’s Lashes" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Lazy’s Lashes">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Lazy’s Lashes" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Lazy’s Lashes</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Lazy’s Lashes">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Lazy’s Lashes" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Lazy’s Lashes">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Lazy’s Lashes">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Lazy’s Lashes">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Lazy’s Lashes">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Lazys golden girls">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Lazys golden girls" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Lazys golden girls">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Lazys golden girls" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Lazys golden girls</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Lazys golden girls">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Lazys golden girls" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Lazys golden girls">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Lazys golden girls">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Lazys golden girls">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Lazys golden girls">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Magicians">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Magicians" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Magicians">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Magicians" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Magicians</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Magicians">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Magicians" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Magicians">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Magicians">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Magicians">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Magicians">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Marvin the martian">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Marvin the martian" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Marvin the martian">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Marvin the martian" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Marvin the martian</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Marvin the martian">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Marvin the martian" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Marvin the martian">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Marvin the martian">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Marvin the martian">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Marvin the martian">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Mystic">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Mystic" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Mystic">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Mystic" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Mystic</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Mystic">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Mystic" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Mystic">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Mystic">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Mystic">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Mystic">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Orange Oxide">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Orange Oxide" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Orange Oxide">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Orange Oxide" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Orange Oxide</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Orange Oxide">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Orange Oxide" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Orange Oxide">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Orange Oxide">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Orange Oxide">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Orange Oxide">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Rastas">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Rastas" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Rastas">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Rastas" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Rastas</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Rastas">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Rastas" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Rastas">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Rastas">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Rastas">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Rastas">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Red People Eater">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Red People Eater" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Red People Eater">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Red People Eater" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Red People Eater</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Red People Eater">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Red People Eater" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Red People Eater">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Red People Eater">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Red People Eater">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Red People Eater">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Ring of Fire">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Ring of Fire" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Ring of Fire">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Ring of Fire" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Ring of Fire</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Ring of Fire">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Ring of Fire" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Ring of Fire">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Ring of Fire">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Ring of Fire">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Ring of Fire">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|RZ Pot of Gold">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|RZ Pot of Gold" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|RZ Pot of Gold">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|RZ Pot of Gold" disabled="">✕</button>
+          </div>
+        </td>
+        <td>RZ Pot of Gold</td>
+        <td>
+          <select class="status" data-key="Zoanthids|RZ Pot of Gold">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|RZ Pot of Gold" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|RZ Pot of Gold">
+          <button class="lock-btn " type="button" data-key="Zoanthids|RZ Pot of Gold">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|RZ Pot of Gold">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|RZ Pot of Gold">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Sunny d's">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Sunny d's" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Sunny d's">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Sunny d's" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Sunny d's</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Sunny d's">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Sunny d's" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Sunny d's">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Sunny d's">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Sunny d's">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Sunny d's">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Superman">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Superman" title="Click to view">
+              <img alt="photo" src="https://github.com/Fire2436/coral-inventory/blob/main/images/SupermanZoa.jpg?raw=true" onerror="this.closest('.thumb').innerHTML='&lt;div class='ph'&gt;⚠️&lt;/div&gt;'">
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Superman">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Superman">✕</button>
+          </div>
+        </td>
+        <td>Superman</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Superman">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Superman" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Superman">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Superman">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Superman">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Superman">✕</button>
+        </td>
+      </tr><tr data-key="Zoanthids|Warp drive">
+        <td>Zoanthids</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="Zoanthids|Warp drive" title="No photo">
+              <div class="ph">📷</div>
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="Zoanthids|Warp drive">Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="Zoanthids|Warp drive" disabled="">✕</button>
+          </div>
+        </td>
+        <td>Warp drive</td>
+        <td>
+          <select class="status" data-key="Zoanthids|Warp drive">
+            <option value="available" selected="">Available</option>
+            <option value="pending">Pending</option>
+            <option value="sold">Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="Zoanthids|Warp drive" placeholder="short notes (size, lighting, etc.)"></textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price " inputmode="decimal" placeholder="$0.00" data-key="Zoanthids|Warp drive">
+          <button class="lock-btn " type="button" data-key="Zoanthids|Warp drive">Lock</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="Zoanthids|Warp drive">✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="Zoanthids|Warp drive">✕</button>
+        </td>
+      </tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footer">Keep this MASTER EDITOR file on your computer. Upload only the exported customer file to GitHub Pages as <code>index.html</code>.</div>
+  </div>
+
+  <div class="wrap" id="customerWrap" style="display:none;">
+    <div class="controls" style="grid-template-columns: 1.2fr .9fr .9fr 1fr;">
+      <div class="card control-card">
+        <label for="cSearch">Search</label>
+        <input id="cSearch" type="text" placeholder="Search corals...">
+      </div>
+      <div class="card control-card">
+        <label for="cCategory">Category</label>
+        <select id="cCategory">
+          <option value="all">All categories</option>
+          <option value="SPS">SPS</option><option value="LPS">LPS</option><option value="Softies">Softies</option><option value="Zoanthids">Zoanthids</option>
+        </select>
+      </div>
+      <div class="card control-card">
+        <label for="cStatus">Status</label>
+        <select id="cStatus">
+          <option value="all">All</option>
+          <option value="available">Available</option>
+          <option value="pending">Pending</option>
+          <option value="sold">Sold</option>
+        </select>
+      </div>
+      <div class="card control-card">
+        <label>&nbsp;</label>
+        <button id="openClaim" type="button">Claim List (0)</button>
+      </div>
+    </div>
+
+    <div class="card stats" id="custStats"></div>
+    <div class="grid" id="grid"></div>
+
+    <div class="footer">Text (419)890-6572 to buy. First come, first served.</div>
+  </div>
+
+  <div class="claim card" id="claimBox">
+    <div class="inner">
+      <h3>Your Claim List</h3>
+      <div class="claim-list" id="claimList"></div>
+      <div class="claim-total"><span id="claimCount">0 items</span><span id="claimTotal">Total: $0.00</span></div>
+      <div class="claim-actions">
+        <button id="textClaim" type="button" class="ok">Text to Buy</button>
+        <button id="copyClaim" type="button">Copy</button>
+        <button id="clearClaim" type="button" class="danger">Clear</button>
+      </div>
+      <div class="tiny">If the Text button doesn’t open on your phone, press Copy and paste into a text to (419)890-6572.</div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" style="display: none;">
+    <div class="card modal">
+      <h2 id="modalTitle">Unlock</h2>
+      <p id="modalDesc">Enter your password to unlock prices + editing.</p>
+      <div class="row" id="modalBody"><div><label>Password</label><input id="mpass" type="password" autocomplete="current-password" placeholder="Enter password"></div></div>
+      <div class="actions">
+        <button id="modalCancel" type="button">Cancel</button>
+        <button id="modalOk" type="button" data-mode="unlock">Unlock</button>
+      </div>
+      <div class="error" id="modalError" style="display: none;">Error</div>
+    </div>
+  </div>
+
+<script>
+(function() {
+  const EMBEDDED_PAYLOAD = {"salt":"G3iu8qU1GP0X7xvLM2XxWw==","check":"F13CWn05HLTx/iLR.ylhuAudu/VFtLV/ccrfhnimX","prices":"{\"SPS|PC Superman\":\"86ez0xbCG0SjA12t.QjSmn8juyeAJeHGUCj146GIKNQ==\",\"LPS|Holy Grail torch\":\"oV2NC7AsKWB/7Qdb.ayh5UWUP6g8MFZeUV4EFlgwh+4w=\",\"Softies|Alveapora\":\"qqxequR0usAMBr7B.w1hhlTnMvfs+0FWN/vkJjFqbAA==\",\"SPS|Fox Flame\":\"XH6pniEQgeh3QEN1.XulQgXw6xaLEbGDmGYpKuSocWA==\"}","pricesPlain":"{\"SPS|PC Superman\":\"$20\",\"LPS|Holy Grail torch\":\"$250\",\"Softies|Alveapora\":\"$25\",\"SPS|Fox Flame\":\"$20\"}","locks":"{\"SPS|PC Superman\":true,\"LPS|Holy Grail torch\":true,\"Softies|Alveapora\":true,\"Zoanthids|Goblins on Fire\":false,\"SPS|RMF tigers blood\":false,\"LPS|BKChem The Grinch torch\":false,\"Softies|Ultra kenya\":false,\"Zoanthids|Ring of Fire\":false,\"SPS|CC dark knight\":false,\"LPS|TCK Master torch\":false,\"Softies|Pulsing Xenia\":false,\"Zoanthids|Mystic\":false,\"SPS|Back Draft\":false,\"LPS|Dragon Tamer torch\":false,\"Zoanthids|RZ Pot of Gold\":false,\"SPS|Pink Highlighter\":false,\"LPS|Holy Moly torch\":false,\"Softies|Jaw breaker mushroom\":false,\"Zoanthids|ACI Lorax\":false,\"SPS|JF Homewreaker\":false,\"LPS|NY Knicks torch\":false,\"Softies|Sunkist bounce mushrom\":false,\"Zoanthids|Rastas\":false,\"SPS|SC Orange Passion\":false,\"LPS|Dragon Soul torch\":false,\"Zoanthids|Bambams\":false,\"SPS|TSA Rainbow sherbert\":false,\"LPS|Hologram Hammer\":false,\"Softies|Cloves\":false,\"Zoanthids|Fairy Farts\":false,\"SPS|Walt Disney\":false,\"LPS|Green w/blue tip hammer\":false,\"Zoanthids|Hurricane\":false,\"SPS|Rainbow Splice\":false,\"Zoanthids|Red People Eater\":false,\"SPS|Side Chick\":false,\"Zoanthids|Magicians\":false,\"SPS|Fox Flame\":true,\"Zoanthids|Daisy Cutters\":false,\"SPS|Cherry Bomb\":false,\"LPS|WWC Grafted Montipora cap\":false,\"Zoanthids|Jungle Juice\":false,\"SPS|Red Handed Tenuous\":false,\"Zoanthids|Orange Oxide\":false,\"SPS|Blue Ten-yyy\":false,\"LPS|Blue raven blastos\":false,\"Zoanthids|Lazy’s Lashes\":false,\"SPS|CB the thing anacropora\":false,\"Zoanthids|Warp drive\":false,\"SPS|Vivids confetti\":false,\"LPS|Laffy Taffy goni\":false,\"Zoanthids|Extreme utter chaos\":false,\"SPS|Superman table\":false,\"LPS|Pink and yellow goni\":false,\"Zoanthids|Bam bam extreme\":false,\"SPS|SBB Heisenberg\":false,\"Zoanthids|Superman\":false,\"SPS|JF Jolt\":false,\"LPS|Rainbow acan\":false,\"Zoanthids|GMK\":false,\"SPS|Pink floyd\":false,\"Zoanthids|Lazys golden girls\":false,\"SPS|Pikachu\":false,\"LPS|Rainbow chalice\":false,\"Zoanthids|Marvin the martian\":false,\"SPS|Rainbow Loom\":false,\"Zoanthids|Burning ember\":false,\"SPS|Grizzly Adams\":false,\"Zoanthids|Great owl\":false,\"SPS|Yellow Lokani\":false,\"Zoanthids|Sunny d's\":false,\"SPS|Pink cadillac\":false,\"Zoanthids|AIO's\":false,\"SPS|Blue milli (aquacultured)\":false,\"Zoanthids|Frozen Apples\":false}","items":"[{\"category\":\"SPS\",\"name\":\"PC Superman\"},{\"category\":\"LPS\",\"name\":\"Holy Grail torch\"},{\"category\":\"Softies\",\"name\":\"Alveapora\"},{\"category\":\"Zoanthids\",\"name\":\"Goblins on Fire\"},{\"category\":\"SPS\",\"name\":\"RMF tigers blood\"},{\"category\":\"LPS\",\"name\":\"BKChem The Grinch torch\"},{\"category\":\"Softies\",\"name\":\"Ultra kenya\"},{\"category\":\"Zoanthids\",\"name\":\"Ring of Fire\"},{\"category\":\"SPS\",\"name\":\"CC dark knight\"},{\"category\":\"LPS\",\"name\":\"TCK Master torch\"},{\"category\":\"Softies\",\"name\":\"Pulsing Xenia\"},{\"category\":\"Zoanthids\",\"name\":\"Mystic\"},{\"category\":\"SPS\",\"name\":\"Back Draft\"},{\"category\":\"LPS\",\"name\":\"Dragon Tamer torch\"},{\"category\":\"Zoanthids\",\"name\":\"RZ Pot of Gold\"},{\"category\":\"SPS\",\"name\":\"Pink Highlighter\"},{\"category\":\"LPS\",\"name\":\"Holy Moly torch\"},{\"category\":\"Softies\",\"name\":\"Jaw breaker mushroom\"},{\"category\":\"Zoanthids\",\"name\":\"ACI Lorax\"},{\"category\":\"SPS\",\"name\":\"JF Homewreaker\"},{\"category\":\"LPS\",\"name\":\"NY Knicks torch\"},{\"category\":\"Softies\",\"name\":\"Sunkist bounce mushrom\"},{\"category\":\"Zoanthids\",\"name\":\"Rastas\"},{\"category\":\"SPS\",\"name\":\"SC Orange Passion\"},{\"category\":\"LPS\",\"name\":\"Dragon Soul torch\"},{\"category\":\"Zoanthids\",\"name\":\"Bambams\"},{\"category\":\"SPS\",\"name\":\"TSA Rainbow sherbert\"},{\"category\":\"LPS\",\"name\":\"Hologram Hammer\"},{\"category\":\"Softies\",\"name\":\"Cloves\"},{\"category\":\"Zoanthids\",\"name\":\"Fairy Farts\"},{\"category\":\"SPS\",\"name\":\"Walt Disney\"},{\"category\":\"LPS\",\"name\":\"Green w/blue tip hammer\"},{\"category\":\"Zoanthids\",\"name\":\"Hurricane\"},{\"category\":\"SPS\",\"name\":\"Rainbow Splice\"},{\"category\":\"Zoanthids\",\"name\":\"Red People Eater\"},{\"category\":\"SPS\",\"name\":\"Side Chick\"},{\"category\":\"Zoanthids\",\"name\":\"Magicians\"},{\"category\":\"SPS\",\"name\":\"Fox Flame\"},{\"category\":\"Zoanthids\",\"name\":\"Daisy Cutters\"},{\"category\":\"SPS\",\"name\":\"Cherry Bomb\"},{\"category\":\"LPS\",\"name\":\"WWC Grafted Montipora cap\"},{\"category\":\"Zoanthids\",\"name\":\"Jungle Juice\"},{\"category\":\"SPS\",\"name\":\"Red Handed Tenuous\"},{\"category\":\"Zoanthids\",\"name\":\"Orange Oxide\"},{\"category\":\"SPS\",\"name\":\"Blue Ten-yyy\"},{\"category\":\"LPS\",\"name\":\"Blue raven blastos\"},{\"category\":\"Zoanthids\",\"name\":\"Lazy’s Lashes\"},{\"category\":\"SPS\",\"name\":\"CB the thing anacropora\"},{\"category\":\"Zoanthids\",\"name\":\"Warp drive\"},{\"category\":\"SPS\",\"name\":\"Vivids confetti\"},{\"category\":\"LPS\",\"name\":\"Laffy Taffy goni\"},{\"category\":\"Zoanthids\",\"name\":\"Extreme utter chaos\"},{\"category\":\"SPS\",\"name\":\"Superman table\"},{\"category\":\"LPS\",\"name\":\"Pink and yellow goni\"},{\"category\":\"Zoanthids\",\"name\":\"Bam bam extreme\"},{\"category\":\"SPS\",\"name\":\"SBB Heisenberg\"},{\"category\":\"Zoanthids\",\"name\":\"Superman\"},{\"category\":\"SPS\",\"name\":\"JF Jolt\"},{\"category\":\"LPS\",\"name\":\"Rainbow acan\"},{\"category\":\"Zoanthids\",\"name\":\"GMK\"},{\"category\":\"SPS\",\"name\":\"Pink floyd\"},{\"category\":\"Zoanthids\",\"name\":\"Lazys golden girls\"},{\"category\":\"SPS\",\"name\":\"Pikachu\"},{\"category\":\"LPS\",\"name\":\"Rainbow chalice\"},{\"category\":\"Zoanthids\",\"name\":\"Marvin the martian\"},{\"category\":\"SPS\",\"name\":\"Rainbow Loom\"},{\"category\":\"Zoanthids\",\"name\":\"Burning ember\"},{\"category\":\"SPS\",\"name\":\"Grizzly Adams\"},{\"category\":\"Zoanthids\",\"name\":\"Great owl\"},{\"category\":\"SPS\",\"name\":\"Yellow Lokani\"},{\"category\":\"Zoanthids\",\"name\":\"Sunny d's\"},{\"category\":\"SPS\",\"name\":\"Pink cadillac\"},{\"category\":\"Zoanthids\",\"name\":\"AIO's\"},{\"category\":\"SPS\",\"name\":\"Blue milli (aquacultured)\"},{\"category\":\"Zoanthids\",\"name\":\"Frozen Apples\"},{\"category\":\"Zoanthids\",\"name\":\"Fruit Loops\"}]","photoUrls":"{\"Softies|Jaw breaker mushroom\":\"https://raw.githubusercontent.com/fire2436/coral-inventory/main/images/Jawbreakermushroom.png\",\"Zoanthids|Superman\":\"https://github.com/Fire2436/coral-inventory/blob/main/images/SupermanZoa.jpg?raw=true\",\"Zoanthids|Fruit Loops\":\"https://github.com/Fire2436/coral-inventory/blob/main/images/FruitLoops.jpg?raw=true\",\"SPS|Fox Flame\":\"https://github.com/Fire2436/coral-inventory/blob/main/images/FoxFlame.jpg?raw=true\"}","status":null,"notes":"{\"SPS|Fox Flame\":\"small frag\"}"}; // replaced during export
+  const PHONE_DISPLAY = "(419)890-6572";
+  const PHONE_SMS = "+14198906572";
+  const CATEGORIES = ["SPS", "LPS", "Softies", "Zoanthids"];
+  const INITIAL_ITEMS = [{"category": "SPS", "name": "PC Superman"}, {"category": "LPS", "name": "Holy Grail torch"}, {"category": "Softies", "name": "Alveapora"}, {"category": "Zoanthids", "name": "Goblins on Fire"}, {"category": "SPS", "name": "RMF tigers blood"}, {"category": "LPS", "name": "BKChem The Grinch torch"}, {"category": "Softies", "name": "Ultra kenya"}, {"category": "Zoanthids", "name": "Ring of Fire"}, {"category": "SPS", "name": "CC dark knight"}, {"category": "LPS", "name": "TCK Master torch"}, {"category": "Softies", "name": "Pulsing Xenia"}, {"category": "Zoanthids", "name": "Mystic"}, {"category": "SPS", "name": "Back Draft"}, {"category": "LPS", "name": "Dragon Tamer torch"}, {"category": "Zoanthids", "name": "RZ Pot of Gold"}, {"category": "SPS", "name": "Pink Highlighter"}, {"category": "LPS", "name": "Holy Moly torch"}, {"category": "Softies", "name": "Jaw breaker mushroom"}, {"category": "Zoanthids", "name": "ACI Lorax"}, {"category": "SPS", "name": "JF Homewreaker"}, {"category": "LPS", "name": "NY Knicks torch"}, {"category": "Softies", "name": "Sunkist bounce mushrom"}, {"category": "Zoanthids", "name": "Rastas"}, {"category": "SPS", "name": "SC Orange Passion"}, {"category": "LPS", "name": "Dragon Soul torch"}, {"category": "Zoanthids", "name": "Bambams"}, {"category": "SPS", "name": "TSA Rainbow sherbert"}, {"category": "LPS", "name": "Hologram Hammer"}, {"category": "Softies", "name": "Cloves"}, {"category": "Zoanthids", "name": "Fairy Farts"}, {"category": "SPS", "name": "Walt Disney"}, {"category": "LPS", "name": "Green w/blue tip hammer"}, {"category": "Zoanthids", "name": "Hurricane"}, {"category": "SPS", "name": "Rainbow Splice"}, {"category": "Zoanthids", "name": "Red People Eater"}, {"category": "SPS", "name": "Side Chick"}, {"category": "Zoanthids", "name": "Magicians"}, {"category": "SPS", "name": "Fox Flame"}, {"category": "Zoanthids", "name": "Daisy Cutters"}, {"category": "SPS", "name": "Cherry Bomb"}, {"category": "LPS", "name": "WWC Grafted Montipora cap"}, {"category": "Zoanthids", "name": "Jungle Juice"}, {"category": "SPS", "name": "Red Handed Tenuous"}, {"category": "Zoanthids", "name": "Orange Oxide"}, {"category": "SPS", "name": "Blue Ten-yyy"}, {"category": "LPS", "name": "Blue raven blastos"}, {"category": "Zoanthids", "name": "Lazy\u2019s Lashes"}, {"category": "SPS", "name": "CB the thing anacropora"}, {"category": "Zoanthids", "name": "Warp drive"}, {"category": "SPS", "name": "Vivids confetti"}, {"category": "LPS", "name": "Laffy Taffy goni"}, {"category": "Zoanthids", "name": "Extreme utter chaos"}, {"category": "SPS", "name": "Superman table"}, {"category": "LPS", "name": "Pink and yellow goni"}, {"category": "Zoanthids", "name": "Bam bam extreme"}, {"category": "SPS", "name": "SBB Heisenberg"}, {"category": "Zoanthids", "name": "Superman"}, {"category": "SPS", "name": "JF Jolt"}, {"category": "LPS", "name": "Rainbow acan"}, {"category": "Zoanthids", "name": "GMK"}, {"category": "SPS", "name": "Pink floyd"}, {"category": "Zoanthids", "name": "Lazys golden girls"}, {"category": "SPS", "name": "Pikachu"}, {"category": "LPS", "name": "Rainbow chalice"}, {"category": "Zoanthids", "name": "Marvin the martian"}, {"category": "SPS", "name": "Rainbow Loom"}, {"category": "Zoanthids", "name": "Burning ember"}, {"category": "SPS", "name": "Grizzly Adams"}, {"category": "Zoanthids", "name": "Great owl"}, {"category": "SPS", "name": "Yellow Lokani"}, {"category": "Zoanthids", "name": "Sunny d's"}, {"category": "SPS", "name": "Pink cadillac"}, {"category": "Zoanthids", "name": "AIO's"}, {"category": "SPS", "name": "Blue milli (aquacultured)"}, {"category": "Zoanthids", "name": "Frozen Apples"}];
+
+  // Storage keys
+  const K_SALT  = 'coral_prices_salt_v1';
+  const K_CHECK = 'coral_prices_check_v1';
+  const K_PRICES = 'coral_prices_map_v1';
+  const K_LOCKS  = 'coral_row_locks_v3';
+  const K_ITEMS  = 'coral_items_v1';
+  const K_PHOTOURLS = 'coral_item_photo_urls_v1';
+  const K_STATUS = 'coral_item_status_v1';   // key -> available|pending|sold
+  const K_NOTES  = 'coral_item_notes_v1';    // key -> string
+
+  const STORE = (() => {
+    if (EMBEDDED_PAYLOAD && typeof EMBEDDED_PAYLOAD === 'object') {
+      const mem = {
+        salt: EMBEDDED_PAYLOAD.salt || null,
+        check: EMBEDDED_PAYLOAD.check || null,
+        prices: EMBEDDED_PAYLOAD.prices || null,
+        pricesPlain: EMBEDDED_PAYLOAD.pricesPlain || null,
+        locks: EMBEDDED_PAYLOAD.locks || null,
+        items: EMBEDDED_PAYLOAD.items || null,
+        photoUrls: EMBEDDED_PAYLOAD.photoUrls || null,
+        status: EMBEDDED_PAYLOAD.status || null,
+        notes: EMBEDDED_PAYLOAD.notes || null,
+      };
+      return {
+        mode: 'embedded',
+        getItem: (k) => mem[k] ?? null,
+        setItem: (k,v) => { mem[k]=v; },
+        removeItem: (k) => { delete mem[k]; },
+      };
+    }
+    return {
+      mode:'local',
+      getItem:(k)=>localStorage.getItem(k),
+      setItem:(k,v)=>localStorage.setItem(k,v),
+      removeItem:(k)=>localStorage.removeItem(k)
+    };
+  })();
+
+  // Editor elements
+  const editorWrap = document.getElementById('editorWrap');
+  const searchEl = document.getElementById('search');
+  const catEl = document.getElementById('category');
+  const quickUrlEl = document.getElementById('quickUrl');
+  const applyUrlBtn = document.getElementById('applyUrl');
+  const clearUrlBtn = document.getElementById('clearUrl');
+  const selectedItemEl = document.getElementById('selectedItem');
+  const tbody = document.querySelector('#coralTable tbody');
+  const pill = document.getElementById('resultsPill');
+  const statsBar = document.getElementById('statsBar');
+  const btnUnlock = document.getElementById('unlock');
+  const btnAdd = document.getElementById('addItem');
+  const btnExportCustomer = document.getElementById('exportCustomer');
+  const btnMore = document.getElementById('moreBtn');
+
+  // Customer elements
+  const customerWrap = document.getElementById('customerWrap');
+  const customerCtas = document.getElementById('customerCtas');
+  const modeLine = document.getElementById('modeLine');
+  const noticeBox = document.getElementById('noticeBox');
+  const cSearch = document.getElementById('cSearch');
+  const cCategory = document.getElementById('cCategory');
+  const cStatus = document.getElementById('cStatus');
+  const grid = document.getElementById('grid');
+  const custStats = document.getElementById('custStats');
+  const openClaim = document.getElementById('openClaim');
+
+  const claimBox = document.getElementById('claimBox');
+  const claimList = document.getElementById('claimList');
+  const claimCount = document.getElementById('claimCount');
+  const claimTotal = document.getElementById('claimTotal');
+  const textClaim = document.getElementById('textClaim');
+  const copyClaim = document.getElementById('copyClaim');
+  const clearClaim = document.getElementById('clearClaim');
+
+  // Modal
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalDesc = document.getElementById('modalDesc');
+  const modalBody = document.getElementById('modalBody');
+  const modalCancel = document.getElementById('modalCancel');
+  const modalOk = document.getElementById('modalOk');
+  const modalError = document.getElementById('modalError');
+
+  let unlocked = false;
+  let aesKey = null;
+  let selectedKey = null;
+
+  function norm(s) { return (s||'').toString().toLowerCase().trim(); }
+  function escapeHTML(s) { return (s||'').toString().replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;"); }
+  function loadJson(key, fallback) { try { const raw=STORE.getItem(key); if(raw==null) return fallback; return JSON.parse(raw); } catch(e) { return fallback; } }
+  function saveJson(key, obj) { STORE.setItem(key, JSON.stringify(obj)); }
+
+  function itemKey(cat, name) { return cat + '|' + name; }
+
+  function getItems() {
+    const raw=STORE.getItem(K_ITEMS);
+    if(!raw) {
+      saveJson(K_ITEMS, INITIAL_ITEMS);
+      return INITIAL_ITEMS.slice();
+    }
+    return loadJson(K_ITEMS, []).slice();
+  }
+
+  // Editor state
+  let items = getItems();
+  let pricesEnc = loadJson(K_PRICES, {});
+  let locks = loadJson(K_LOCKS, {});
+  let photoUrls = loadJson(K_PHOTOURLS, {});
+  let statusMap = loadJson(K_STATUS, {});
+  let notesMap = loadJson(K_NOTES, {});
+
+  // Customer state (claim list)
+  let claim = {}; // key -> true
+
+  // Crypto
+  function b64enc(bytes) { let bin=''; bytes.forEach(b=>bin+=String.fromCharCode(b)); return btoa(bin); }
+  function b64dec(b64) { const bin=atob(b64); const out=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) out[i]=bin.charCodeAt(i); return out; }
+  async function getOrCreateSalt() {
+    let s=STORE.getItem(K_SALT);
+    if(s) return b64dec(s);
+    const salt=crypto.getRandomValues(new Uint8Array(16));
+    STORE.setItem(K_SALT, b64enc(salt));
+    return salt;
+  }
+  async function deriveKeyFromPassword(password, salt) {
+    const enc=new TextEncoder();
+    const baseKey=await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:200000, hash:'SHA-256'}, baseKey, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+  }
+  async function encryptString(key, plaintext) {
+    const iv=crypto.getRandomValues(new Uint8Array(12));
+    const enc=new TextEncoder();
+    const ct=await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, enc.encode(plaintext));
+    return btoa(String.fromCharCode(...iv))+'.'+btoa(String.fromCharCode(...new Uint8Array(ct)));
+  }
+  async function decryptString(key, blob) {
+    const parts=(blob||'').split('.'); if(parts.length!==2) throw new Error('Bad ciphertext');
+    const ivStr=atob(parts[0]); const ctStr=atob(parts[1]);
+    const iv=new Uint8Array(ivStr.length); for(let i=0;i<ivStr.length;i++) iv[i]=ivStr.charCodeAt(i);
+    const ct=new Uint8Array(ctStr.length); for(let i=0;i<ctStr.length;i++) ct[i]=ctStr.charCodeAt(i);
+    const pt=await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct);
+    return new TextDecoder().decode(pt);
+  }
+  function hasPassword() { return !!STORE.getItem(K_CHECK); }
+  async function createPassword(pass) {
+    const salt=await getOrCreateSalt();
+    const key=await deriveKeyFromPassword(pass, salt);
+    STORE.setItem(K_CHECK, await encryptString(key,'ok'));
+    return key;
+  }
+  async function unlockWithPassword(pass) {
+    const salt=await getOrCreateSalt();
+    const key=await deriveKeyFromPassword(pass, salt);
+    const checkEnc=STORE.getItem(K_CHECK);
+    if(!checkEnc) throw new Error('No password set');
+    const check=await decryptString(key, checkEnc);
+    if(check!=='ok') throw new Error('Wrong password');
+    return key;
+  }
+
+  function showModal({title, desc, bodyHTML, okText='OK', mode, hideCancel=false}) {
+    modalError.style.display='none';
+    modalTitle.textContent = title || 'Modal';
+    modalDesc.textContent = desc || '';
+    modalBody.innerHTML = bodyHTML || '';
+    modalOk.textContent = okText;
+    modalOk.dataset.mode = mode || '';
+    modalCancel.style.display = hideCancel ? 'none' : '';
+    modalBackdrop.style.display='flex';
+  }
+  function hideModal() { modalBackdrop.style.display='none'; modalCancel.style.display=''; }
+  function setModalError(msg) { modalError.textContent=msg; modalError.style.display='block'; }
+
+  function refreshQuickControls() {
+    const editable = unlocked && STORE.mode !== 'embedded';
+    const hasSelection = !!selectedKey;
+    applyUrlBtn.disabled = !(editable && hasSelection && (quickUrlEl.value||'').trim() !== '');
+    clearUrlBtn.disabled = !(editable && hasSelection);
+  }
+  function setSelection(key) {
+    selectedKey = key;
+    selectedItemEl.value = key ? key.replace('|',' — ') : '(click a row)';
+    if (key) quickUrlEl.value = (photoUrls[key] || '').trim();
+    highlightSelectedRow();
+    refreshQuickControls();
+  }
+  function highlightSelectedRow() {
+    document.querySelectorAll('#coralTable tbody tr').forEach(tr=>{
+      tr.classList.toggle('selected', tr.getAttribute('data-key') === selectedKey);
+    });
+  }
+  function enableUI(enable) {
+    unlocked = enable;
+    const editable = enable && STORE.mode !== 'embedded';
+    btnUnlock.textContent = enable ? 'Unlocked' : 'Unlock';
+    btnAdd.disabled = !editable;
+    btnExportCustomer.disabled = !editable;
+    btnMore.disabled = !editable;
+    refreshQuickControls();
+  }
+
+  function parsePrice(v) { if(v==null) return NaN; const s=v.toString().replace(/[^0-9.]/g,''); return Number(s); }
+  function currency(n) { const num=Number(n); if(!isFinite(num)) return '$0.00'; return num.toLocaleString(undefined, {style:'currency', currency:'USD'}); }
+
+  async function decryptAllToInputs() {
+    if(!aesKey) return;
+    for (const inp of document.querySelectorAll('input.price')) {
+      const key = inp.getAttribute('data-key')||'';
+      const blob = pricesEnc[key];
+      if(!blob) { inp.value=''; continue; }
+      try { inp.value = await decryptString(aesKey, blob); }
+      catch(e) { inp.value=''; }
+    }
+  }
+  async function encryptAndStore(keyStr, val) {
+    if(!aesKey) return;
+    pricesEnc[keyStr] = await encryptString(aesKey, val);
+    STORE.setItem(K_PRICES, JSON.stringify(pricesEnc));
+  }
+
+  function computeEditorStats() {
+    const counts = Object.fromEntries(CATEGORIES.map(c=>[c,0]));
+    let available=0, pending=0, sold=0;
+    for (const it of items) {
+      counts[it.category] = (counts[it.category]||0)+1;
+      const k=itemKey(it.category,it.name);
+      const st=(statusMap[k]||'available');
+      if(st==='sold') sold++;
+      else if(st==='pending') pending++;
+      else available++;
+    }
+    const withPhotos = Object.values(photoUrls||{}).filter(u => (u||'').trim()!=='').length;
+    statsBar.innerHTML = CATEGORIES.map(c=>`
+      <div class="stat"><div class="k">${escapeHTML(c)}</div><div class="v">${counts[c]||0}</div></div>
+    `).join('') + `
+      <div class="stat"><div class="k">Available</div><div class="v">${available}</div></div>
+      <div class="stat"><div class="k">Pending</div><div class="v">${pending}</div></div>
+      <div class="stat"><div class="k">Sold</div><div class="v">${sold}</div></div>
+      <div class="stat"><div class="k">Photo links</div><div class="v">${withPhotos}</div></div>
+    `;
+  }
+
+  function renderEditor() {
+    const q = norm(searchEl.value);
+    const catFilter = catEl.value;
+    tbody.innerHTML = '';
+    const sorted = items.slice().sort((a,b)=>{ const ca=a.category.localeCompare(b.category); if(ca!==0) return ca; return a.name.localeCompare(b.name); });
+    let shown = 0;
+
+    for (const it of sorted) {
+      const key = itemKey(it.category, it.name);
+      const ok = ((catFilter==='all') || (it.category===catFilter)) && (q==='' || norm(it.category+' '+it.name).includes(q));
+      const tr = document.createElement('tr');
+      tr.style.display = ok ? '' : 'none';
+      tr.setAttribute('data-key', key);
+      if(ok) shown += 1;
+
+      const url = (photoUrls[key] || '').trim();
+      const hasImg = url !== '';
+      const st = (statusMap[key] || 'available');
+      const notes = (notesMap[key] || '');
+
+      tr.innerHTML = `
+        <td>${escapeHTML(it.category)}</td>
+        <td>
+          <div class="img-actions">
+            <div class="thumb" data-key="${escapeHTML(key)}" title="${hasImg ? 'Click to view' : 'No photo'}">
+              ${hasImg ? `<img alt="photo" src="${escapeHTML(url)}" onerror="this.closest('.thumb').innerHTML='<div class=\'ph\'>⚠️</div>'" />` : `<div class="ph">📷</div>`}
+            </div>
+            <button class="img-btn seturl-btn" type="button" data-key="${escapeHTML(key)}" ${(unlocked && STORE.mode!=='embedded') ? '' : 'disabled'}>Photo</button>
+            <button class="mini-btn clearurl-btn del-btn" type="button" data-key="${escapeHTML(key)}" ${(unlocked && STORE.mode!=='embedded' && hasImg) ? '' : 'disabled'}>✕</button>
+          </div>
+        </td>
+        <td>${escapeHTML(it.name)}</td>
+        <td>
+          <select class="status" data-key="${escapeHTML(key)}" ${(unlocked && STORE.mode!=='embedded') ? '' : 'disabled'}>
+            <option value="available" ${st==='available'?'selected':''}>Available</option>
+            <option value="pending" ${st==='pending'?'selected':''}>Pending</option>
+            <option value="sold" ${st==='sold'?'selected':''}>Sold</option>
+          </select>
+        </td>
+        <td>
+          <textarea class="notes" data-key="${escapeHTML(key)}" placeholder="short notes (size, lighting, etc.)" ${(unlocked && STORE.mode!=='embedded') ? '' : 'disabled'}>${escapeHTML(notes)}</textarea>
+        </td>
+        <td class="price-cell">
+          <input class="price ${locks[key] ? 'locked' : ''}" inputmode="decimal" placeholder="${unlocked ? '$0.00' : '••••••'}" data-key="${escapeHTML(key)}" ${(unlocked && !locks[key]) ? '' : 'disabled'} />
+          <button class="lock-btn ${locks[key] ? 'locked' : ''}" type="button" data-key="${escapeHTML(key)}" ${unlocked ? '' : 'disabled'}>${locks[key] ? 'Unlock' : 'Lock'}</button>
+          <button class="mini-btn edit-btn" type="button" title="Rename item" data-key="${escapeHTML(key)}" ${(unlocked && STORE.mode!=='embedded') ? '' : 'disabled'}>✎</button>
+          <button class="mini-btn delitem-btn del-btn" type="button" title="Delete item" data-key="${escapeHTML(key)}" ${(unlocked && STORE.mode!=='embedded') ? '' : 'disabled'}>✕</button>
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+    }
+
+    pill.textContent = shown + (shown===1 ? ' result' : ' results');
+    attachEditorEvents();
+    highlightSelectedRow();
+
+    if (unlocked) decryptAllToInputs().then(computeEditorStats).catch(computeEditorStats);
+    else computeEditorStats();
+  }
+
+  function attachEditorEvents() {
+    document.querySelectorAll('#coralTable tbody tr').forEach(tr=>{
+      tr.onclick = (e)=>{
+        const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+        if(['input','button','img','select','textarea'].includes(tag)) return;
+        setSelection(tr.getAttribute('data-key'));
+      };
+    });
+
+    document.querySelectorAll('select.status').forEach(sel=>{
+      const key = sel.getAttribute('data-key')||'';
+      sel.onchange = ()=>{
+        statusMap[key] = sel.value;
+        STORE.setItem(K_STATUS, JSON.stringify(statusMap));
+        computeEditorStats();
+      };
+      sel.onclick = ()=> setSelection(key);
+    });
+
+    document.querySelectorAll('textarea.notes').forEach(tx=>{
+      const key = tx.getAttribute('data-key')||'';
+      tx.oninput = ()=>{
+        notesMap[key] = tx.value;
+        STORE.setItem(K_NOTES, JSON.stringify(notesMap));
+      };
+      tx.onclick = ()=> setSelection(key);
+    });
+
+    document.querySelectorAll('input.price').forEach(inp=>{
+      const key = inp.getAttribute('data-key')||'';
+      inp.oninput = async ()=>{ if(!unlocked) return; await encryptAndStore(key, inp.value); };
+      inp.onblur = ()=>{ if(!unlocked) return; if((inp.value||'').trim()!==''){ locks[key]=true; STORE.setItem(K_LOCKS, JSON.stringify(locks)); renderEditor(); } };
+      inp.onkeydown = (e)=>{ if(!unlocked) return; if(e.key==='Enter'){ e.preventDefault(); if((inp.value||'').trim()!==''){ locks[key]=true; STORE.setItem(K_LOCKS, JSON.stringify(locks)); renderEditor(); } } };
+      inp.onclick = ()=> setSelection(key);
+    });
+
+    document.querySelectorAll('button.lock-btn').forEach(btn=>{
+      const key = btn.getAttribute('data-key')||'';
+      btn.onclick = ()=>{
+        setSelection(key);
+        if(!unlocked) return;
+        const currentlyLocked = !!locks[key];
+        if(!currentlyLocked) {
+          const inp = document.querySelector('input.price[data-key="'+CSS.escape(key)+'"]');
+          if(((inp?.value)||'').trim()==='') return;
+        }
+        locks[key] = !currentlyLocked;
+        STORE.setItem(K_LOCKS, JSON.stringify(locks));
+        renderEditor();
+      };
+    });
+
+    document.querySelectorAll('.thumb').forEach(div=>{
+      const key = div.getAttribute('data-key')||'';
+      div.onclick = ()=>{
+        setSelection(key);
+        const url = (photoUrls[key]||'').trim();
+        if(!url) return;
+        showModal({ title:'Photo', desc:key.replace('|',' — '), bodyHTML:`<img class="bigimg" alt="photo" src="${escapeHTML(url)}" />`, okText:'Close', mode:'noop', hideCancel:true });
+      };
+    });
+
+    document.querySelectorAll('button.seturl-btn').forEach(btn=>{
+      const key = btn.getAttribute('data-key')||'';
+      btn.onclick = ()=>{
+        setSelection(key);
+        if(!unlocked || STORE.mode==='embedded') return;
+        quickUrlEl.focus();
+        quickUrlEl.select();
+      };
+    });
+
+    document.querySelectorAll('button.clearurl-btn').forEach(btn=>{
+      const key = btn.getAttribute('data-key')||'';
+      btn.onclick = ()=>{
+        setSelection(key);
+        if(!unlocked || STORE.mode==='embedded') return;
+        delete photoUrls[key];
+        STORE.setItem(K_PHOTOURLS, JSON.stringify(photoUrls));
+        quickUrlEl.value = '';
+        renderEditor();
+      };
+    });
+
+    document.querySelectorAll('button.delitem-btn').forEach(btn=>{
+      const key = btn.getAttribute('data-key')||'';
+      btn.onclick = ()=>{
+        setSelection(key);
+        if(!unlocked || STORE.mode==='embedded') return;
+        showModal({ title:'Delete Item', desc:'This removes the item, its saved price, and its photo link.', bodyHTML:`<div><b>${escapeHTML(key.replace('|',' — '))}</b></div>`, okText:'Delete', mode:'confirm_delete' });
+        modalOk.dataset.key = key;
+      };
+    });
+
+    document.querySelectorAll('button.edit-btn').forEach(btn=>{
+      const key = btn.getAttribute('data-key')||'';
+      btn.onclick = ()=>{
+        setSelection(key);
+        if(!unlocked || STORE.mode==='embedded') return;
+        const parts = key.split('|'); const cat = parts[0]||''; const name = parts.slice(1).join('|')||'';
+        showModal({
+          title:'Rename Item',
+          desc:'Saved price + photo link move with it.',
+          bodyHTML:`
+            <div><label>Category</label>
+              <select id="mecat">${CATEGORIES.map(c=>`<option value="${escapeHTML(c)}" ${c===cat?'selected':''}>${escapeHTML(c)}</option>`).join('')}</select>
+            </div>
+            <div><label>Item name</label><input id="mename" type="text" value="${escapeHTML(name)}" /></div>
+          `,
+          okText:'Save',
+          mode:'rename_item'
+        });
+        modalOk.dataset.key = key;
+      };
+    });
+  }
+
+  function addItem(cat, name) {
+    const trimmed=(name||'').trim();
+    if(!trimmed) throw new Error('Item name is required.');
+    if(!CATEGORIES.includes(cat)) throw new Error('Invalid category.');
+    const k=itemKey(cat, trimmed);
+    if(items.some(it=>itemKey(it.category,it.name)===k)) throw new Error('That item already exists.');
+    items.push({category:cat, name:trimmed});
+    statusMap[k] = statusMap[k] || 'available';
+    notesMap[k] = notesMap[k] || '';
+    STORE.setItem(K_ITEMS, JSON.stringify(items));
+    STORE.setItem(K_STATUS, JSON.stringify(statusMap));
+    STORE.setItem(K_NOTES, JSON.stringify(notesMap));
+  }
+
+  function deleteItemByKey(key) {
+    const parts=key.split('|'); if(parts.length<2) return;
+    const cat=parts[0]; const name=parts.slice(1).join('|');
+    items = items.filter(it => !(it.category===cat && it.name===name));
+    STORE.setItem(K_ITEMS, JSON.stringify(items));
+    if(pricesEnc[key]) { delete pricesEnc[key]; STORE.setItem(K_PRICES, JSON.stringify(pricesEnc)); }
+    if(locks[key]!=null) { delete locks[key]; STORE.setItem(K_LOCKS, JSON.stringify(locks)); }
+    if(photoUrls[key]) { delete photoUrls[key]; STORE.setItem(K_PHOTOURLS, JSON.stringify(photoUrls)); }
+    if(statusMap[key]) { delete statusMap[key]; STORE.setItem(K_STATUS, JSON.stringify(statusMap)); }
+    if(notesMap[key]) { delete notesMap[key]; STORE.setItem(K_NOTES, JSON.stringify(notesMap)); }
+    if (selectedKey === key) setSelection(null);
+  }
+
+  function renameItem(oldKey, newCat, newName) {
+    const trimmed=(newName||'').trim();
+    if(!trimmed) throw new Error('Item name is required.');
+    if(!CATEGORIES.includes(newCat)) throw new Error('Invalid category.');
+    const parts=oldKey.split('|'); if(parts.length<2) throw new Error('Bad key.');
+    const oldCat=parts[0]; const oldName=parts.slice(1).join('|');
+    const newKey=itemKey(newCat, trimmed);
+    if(newKey===oldKey) return;
+    if(items.some(it=>itemKey(it.category,it.name)===newKey)) throw new Error('That item already exists.');
+    let changed=false;
+    items = items.map(it => { if(!changed && it.category===oldCat && it.name===oldName) { changed=true; return {category:newCat, name:trimmed}; } return it; });
+    if(!changed) throw new Error('Item not found.');
+    STORE.setItem(K_ITEMS, JSON.stringify(items));
+
+    const move = (obj, key1, key2) => { if(obj[key1]!==undefined) { obj[key2]=obj[key1]; delete obj[key1]; } };
+    move(pricesEnc, oldKey, newKey);
+    move(locks, oldKey, newKey);
+    move(photoUrls, oldKey, newKey);
+    move(statusMap, oldKey, newKey);
+    move(notesMap, oldKey, newKey);
+
+    STORE.setItem(K_PRICES, JSON.stringify(pricesEnc));
+    STORE.setItem(K_LOCKS, JSON.stringify(locks));
+    STORE.setItem(K_PHOTOURLS, JSON.stringify(photoUrls));
+    STORE.setItem(K_STATUS, JSON.stringify(statusMap));
+    STORE.setItem(K_NOTES, JSON.stringify(notesMap));
+
+    if (selectedKey === oldKey) setSelection(newKey);
+  }
+
+  async function exportCustomerPage() {
+    if(!aesKey) throw new Error('Unlock first so prices can be included.');
+    const plain = {};
+    for (const k in pricesEnc) {
+      try { plain[k] = await decryptString(aesKey, pricesEnc[k]); }
+      catch(e) { plain[k] = ''; }
+    }
+
+    const payload = {
+      salt: STORE.getItem(K_SALT),
+      check: STORE.getItem(K_CHECK),
+      prices: STORE.getItem(K_PRICES),
+      pricesPlain: JSON.stringify(plain),
+      locks: STORE.getItem(K_LOCKS),
+      items: STORE.getItem(K_ITEMS),
+      photoUrls: STORE.getItem(K_PHOTOURLS),
+      status: STORE.getItem(K_STATUS),
+      notes: STORE.getItem(K_NOTES),
+    };
+
+    let out = document.documentElement.outerHTML;
+    out = out.replace('const EMBEDDED_PAYLOAD = null;', 'const EMBEDDED_PAYLOAD = ' + JSON.stringify(payload) + ';');
+
+    const blob = new Blob([out], {type:'text/html;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Brandon_Millers_Coral_Inventory_CUSTOMER.html';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  // ---------- Customer view ----------
+  function getCustomerData() {
+    const its = STORE.mode==='embedded' ? JSON.parse(STORE.getItem('items')||'[]') : items;
+    const ph  = STORE.mode==='embedded' ? JSON.parse(STORE.getItem('photoUrls')||'{}') : photoUrls;
+    const st  = STORE.mode==='embedded' ? JSON.parse(STORE.getItem('status')||'{}') : statusMap;
+    const no  = STORE.mode==='embedded' ? JSON.parse(STORE.getItem('notes')||'{}') : notesMap;
+    return { its, ph, st, no };
+  }
+
+  function getCustomerPrice(key) {
+    if (STORE.mode==='embedded') {
+      try {
+        const map = JSON.parse(STORE.getItem('pricesPlain') || '{}');
+        return (map[key] || '').toString();
+      } catch(e) { return ''; }
+    }
+    const inp = document.querySelector('input.price[data-key="'+CSS.escape(key)+'"]');
+    return (inp && unlocked) ? (inp.value || '') : '';
+  }
+
+  function statusBadge(st) {
+    const cls = st==='sold' ? 'sold' : (st==='pending' ? 'pending' : 'available');
+    const label = st==='sold' ? 'Sold' : (st==='pending' ? 'Pending' : 'Available');
+    return `<span class="badge ${cls}">${label}</span>`;
+  }
+
+  function renderCustomer() {
+    const { its, ph, st, no } = getCustomerData();
+    const q = norm(cSearch.value);
+    const cat = cCategory.value;
+    const stf = cStatus.value;
+
+    const sorted = its.slice().sort((a,b)=>{ const ca=a.category.localeCompare(b.category); if(ca!==0) return ca; return a.name.localeCompare(b.name); });
+    let shown=0, avail=0, pend=0, sold=0;
+
+    const cards = [];
+    for (const it of sorted) {
+      const key = itemKey(it.category, it.name);
+      const url = (ph[key] || '').trim();
+      const hasImg = url !== '';
+      const status = (st[key] || 'available');
+      const notes = (no[key] || '').trim();
+      const price = (getCustomerPrice(key) || '').trim();
+
+      const ok = (cat==='all' || it.category===cat) &&
+                 (stf==='all' || status===stf) &&
+                 (q==='' || norm(it.category+' '+it.name+' '+notes).includes(q));
+      if(!ok) continue;
+
+      shown++;
+      if(status==='sold') sold++; else if(status==='pending') pend++; else avail++;
+
+      const disabled = status==='sold' ? 'disabled' : '';
+      const inList = !!claim[key];
+
+      cards.push(`
+        <div class="card item-card">
+          <div class="hero" title="${hasImg ? 'Tap to view' : ''}" data-img="${escapeHTML(url)}" data-name="${escapeHTML(it.name)}">
+            ${hasImg ? `<img alt="photo" src="${escapeHTML(url)}" onerror="this.outerHTML='<div class=\'ph\'>⚠️</div>'" />` : `<div class="ph">No photo yet</div>`}
+          </div>
+          <div class="line">
+            <div>
+              <div class="name">${escapeHTML(it.name)}</div>
+              <div class="meta">${escapeHTML(it.category)} • ${statusBadge(status)}</div>
+            </div>
+            <div class="price-tag">${price ? escapeHTML(price) : ''}</div>
+          </div>
+          <div class="notes">${notes ? escapeHTML(notes) : '<span class="meta">—</span>'}</div>
+          <div class="actions">
+            <button type="button" class="ok" data-add="${escapeHTML(key)}" ${disabled}>${inList ? 'Added' : 'Add'}</button>
+            <button type="button" data-textone="${escapeHTML(key)}" ${disabled}>Text</button>
+          </div>
+        </div>
+      `);
+    }
+
+    grid.innerHTML = cards.join('');
+    custStats.innerHTML = `
+      <div class="stat"><div class="k">Showing</div><div class="v">${shown}</div></div>
+      <div class="stat"><div class="k">Available</div><div class="v">${avail}</div></div>
+      <div class="stat"><div class="k">Pending</div><div class="v">${pend}</div></div>
+      <div class="stat"><div class="k">Sold</div><div class="v">${sold}</div></div>
+      <div class="stat"><div class="k">Claim list</div><div class="v">${Object.keys(claim).length}</div></div>
+      <div class="stat"><div class="k">Text</div><div class="v">${escapeHTML(PHONE_DISPLAY)}</div></div>
+    `;
+    openClaim.textContent = `Claim List (${Object.keys(claim).length})`;
+    attachCustomerEvents();
+    renderClaimBox();
+  }
+
+  function buildSmsHref(message) {
+    const body = encodeURIComponent(message);
+    return 'sms:' + PHONE_SMS + '?&body=' + body;
+  }
+
+  function buildClaimMessage() {
+    const { its, st } = getCustomerData();
+    const keyToItem = {};
+    for (const it of its) keyToItem[itemKey(it.category,it.name)] = it;
+
+    const lines = [];
+    lines.push("Hi Brandon — I want to buy these corals:");
+    let total=0;
+
+    for (const key of Object.keys(claim)) {
+      const it = keyToItem[key];
+      if(!it) continue;
+      const price = (getCustomerPrice(key)||'').trim();
+      const status = (st[key] || 'available');
+      const pNum = parsePrice(price);
+      if(isFinite(pNum)) total += pNum;
+      lines.push(`- ${it.name} (${it.category})${price ? ' — ' + price : ''}${status!=='available' ? ' ['+status.toUpperCase()+']' : ''}`);
+    }
+    if (Object.keys(claim).length===0) lines.push("(none yet)");
+    else lines.push(`Total (if priced): ${currency(total)}`);
+    lines.push("Thanks!");
+    return lines.join("\n");
+  }
+
+  function renderClaimBox() {
+    const count = Object.keys(claim).length;
+    claimCount.textContent = count + (count===1 ? " item" : " items");
+
+    let total=0;
+    for (const key of Object.keys(claim)) {
+      const p = parsePrice(getCustomerPrice(key));
+      if(isFinite(p)) total += p;
+    }
+    claimTotal.textContent = "Total: " + currency(total);
+
+    const { its } = getCustomerData();
+    const keyToItem = {};
+    for (const it of its) keyToItem[itemKey(it.category,it.name)] = it;
+
+    claimList.innerHTML = Object.keys(claim).map(key=>{
+      const it = keyToItem[key];
+      if(!it) return '';
+      const price=(getCustomerPrice(key)||'').trim();
+      return `<div class="claim-row">
+        <div>
+          <div><b>${escapeHTML(it.name)}</b></div>
+          <small>${escapeHTML(it.category)}${price ? ' • ' + escapeHTML(price) : ''}</small>
+        </div>
+        <button type="button" class="mini-btn del-btn" data-remove="${escapeHTML(key)}">✕</button>
+      </div>`;
+    }).join('') || '<div class="tiny">No items yet. Tap “Add” on a coral.</div>';
+
+    claimList.querySelectorAll('button[data-remove]').forEach(btn=>{
+      btn.onclick = ()=>{ delete claim[btn.getAttribute('data-remove')]; renderCustomer();
+    // Always-enable the top “Text to Buy” button with a pre-filled message
+    try {
+      const tl = document.getElementById('textLink');
+      if (tl) tl.href = buildSmsHref(buildClaimMessage());
+    } catch (e) {}
+ };
+    });
+
+    if(count>0) claimBox.style.display = 'block';
+  }
+
+  async function copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showModal({title:'Copied', desc:'Message copied to clipboard.', bodyHTML:'<div>Paste it into a text to ' + escapeHTML(PHONE_DISPLAY) + '.</div>', okText:'OK', mode:'noop', hideCancel:true});
+    } catch(e) {
+      showModal({title:'Copy', desc:'Copy this message:', bodyHTML:`<textarea readonly>${escapeHTML(text)}</textarea>`, okText:'Close', mode:'noop', hideCancel:true});
+    }
+  }
+
+  function attachCustomerEvents() {
+    grid.querySelectorAll('button[data-add]').forEach(btn=>{
+      const key = btn.getAttribute('data-add');
+      btn.onclick = ()=>{
+        if(btn.disabled) return;
+        claim[key] = true;
+        renderCustomer();
+      };
+    });
+
+    grid.querySelectorAll('button[data-textone]').forEach(btn=>{
+      const key = btn.getAttribute('data-textone');
+      btn.onclick = ()=>{
+        if(btn.disabled) return;
+        const { its } = getCustomerData();
+        const it = its.find(x=> itemKey(x.category,x.name)===key);
+        if(!it) return;
+        const price=(getCustomerPrice(key)||'').trim();
+        const msg = `Hi Brandon — I want to buy: ${it.name} (${it.category})${price ? ' — ' + price : ''}. Thanks!`;
+        window.location.href = buildSmsHref(msg);
+      };
+    });
+
+    grid.querySelectorAll('.hero').forEach(div=>{
+      div.onclick = ()=>{
+        const url = div.getAttribute('data-img') || '';
+        const name = div.getAttribute('data-name') || 'Photo';
+        if(!url) return;
+        showModal({ title:'Photo', desc:name, bodyHTML:`<img class="bigimg" alt="photo" src="${escapeHTML(url)}" />`, okText:'Close', mode:'noop', hideCancel:true });
+      };
+    });
+  }
+
+  // Claim box buttons
+  openClaim?.addEventListener('click', ()=>{ claimBox.style.display = (claimBox.style.display==='none'||!claimBox.style.display) ? 'block' : 'none'; });
+  textClaim.addEventListener('click', ()=>{ window.location.href = buildSmsHref(buildClaimMessage()); });
+  copyClaim.addEventListener('click', ()=> copyToClipboard(buildClaimMessage()));
+  clearClaim.addEventListener('click', ()=>{ claim={}; renderCustomer(); claimBox.style.display='none'; });
+
+  // Modal wiring
+  modalCancel.addEventListener('click', hideModal);
+  modalBackdrop.addEventListener('click', (e)=>{ if(e.target===modalBackdrop) hideModal(); });
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && modalBackdrop.style.display==='flex') hideModal(); });
+
+  async function handleModalOk() {
+    modalError.style.display='none';
+    const mode = modalOk.dataset.mode;
+    try {
+      if(mode==='unlock') {
+        if(!hasPassword()) {
+          showModal({ title:'Create Password', desc:'Create a password to protect prices. If you forget it, prices can\'t be recovered.',
+            bodyHTML:`
+              <div><label>New password</label><input id="mp1" type="password" autocomplete="new-password" placeholder="At least 6 characters" /></div>
+              <div><label>Confirm password</label><input id="mp2" type="password" autocomplete="new-password" placeholder="Confirm password" /></div>`,
+            okText:'Create', mode:'set_password' });
+          return;
+        }
+        const pass = document.getElementById('mpass').value;
+        aesKey = await unlockWithPassword(pass);
+        hideModal(); enableUI(true); renderEditor();
+      }
+      if(mode==='set_password') {
+        const p1=document.getElementById('mp1').value; const p2=document.getElementById('mp2').value;
+        if((p1||'').length<6) throw new Error('Password must be at least 6 characters.');
+        if(p1!==p2) throw new Error('Passwords do not match.');
+        aesKey = await createPassword(p1);
+        hideModal(); enableUI(true); renderEditor();
+      }
+      if(mode==='add_item') { addItem(document.getElementById('mcat').value, document.getElementById('mname').value); hideModal(); renderEditor(); }
+      if(mode==='confirm_delete') { deleteItemByKey(modalOk.dataset.key || ''); hideModal(); renderEditor(); }
+      if(mode==='rename_item') { renameItem(modalOk.dataset.key || '', document.getElementById('mecat').value, document.getElementById('mename').value); hideModal(); renderEditor(); }
+      if(mode==='more_menu') {
+        const action = document.getElementById('maction').value;
+        if(action==='clear_all') {
+          showModal({ title:'Clear All', desc:'Resets items and clears saved data on this device.', bodyHTML:'<div>Are you sure?</div>', okText:'Clear', mode:'do_clear_all' });
+          return;
+        }
+        hideModal();
+      }
+      if(mode==='do_clear_all') {
+        STORE.removeItem(K_PRICES); STORE.removeItem(K_LOCKS); STORE.removeItem(K_ITEMS);
+        STORE.removeItem(K_PHOTOURLS); STORE.removeItem(K_STATUS); STORE.removeItem(K_NOTES);
+        items = getItems();
+        pricesEnc = loadJson(K_PRICES, {}); locks = loadJson(K_LOCKS, {});
+        photoUrls = loadJson(K_PHOTOURLS, {}); statusMap = loadJson(K_STATUS, {}); notesMap = loadJson(K_NOTES, {});
+        selectedKey=null;
+        hideModal(); renderEditor();
+      }
+      if(mode==='noop') hideModal();
+    } catch(e) {
+      setModalError(e.message || 'Something went wrong.');
+    }
+  }
+  modalOk.addEventListener('click', handleModalOk);
+
+  // Editor buttons
+  btnUnlock.addEventListener('click', ()=>{
+    if(STORE.mode==='embedded') return;
+    showModal({ title:'Unlock', desc:'Enter your password to unlock prices + editing.',
+      bodyHTML:`<div><label>Password</label><input id="mpass" type="password" autocomplete="current-password" placeholder="Enter password" /></div>`,
+      okText:'Unlock', mode:'unlock' });
+  });
+  btnAdd.addEventListener('click', ()=>{
+    if(!unlocked || STORE.mode==='embedded') return;
+    showModal({ title:'Add Item', desc:'Add a coral to your inventory.',
+      bodyHTML:`
+        <div><label>Category</label>
+          <select id="mcat">${CATEGORIES.map(c=>`<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('')}</select>
+        </div>
+        <div><label>Item name</label><input id="mname" type="text" placeholder="e.g., PC Superman" /></div>`,
+      okText:'Add', mode:'add_item' });
+  });
+  btnExportCustomer.addEventListener('click', async ()=>{ if(!unlocked || STORE.mode==='embedded') return; await exportCustomerPage(); });
+  btnMore.addEventListener('click', ()=>{
+    if(!unlocked || STORE.mode==='embedded') return;
+    showModal({
+      title:'More',
+      desc:'Maintenance actions',
+      bodyHTML:`
+        <div>
+          <label>Choose action</label>
+          <select id="maction">
+            <option value="clear_all">Clear all (reset)</option>
+          </select>
+        </div>
+      `,
+      okText:'Continue',
+      mode:'more_menu'
+    });
+  });
+
+  // Quick photo controls
+  quickUrlEl.addEventListener('input', refreshQuickControls);
+  applyUrlBtn.addEventListener('click', ()=>{
+    const url = (quickUrlEl.value || '').trim();
+    if(!unlocked || STORE.mode==='embedded' || !selectedKey || !url) return;
+    photoUrls[selectedKey] = url;
+    STORE.setItem(K_PHOTOURLS, JSON.stringify(photoUrls));
+    renderEditor();
+  });
+  clearUrlBtn.addEventListener('click', ()=>{
+    if(!unlocked || STORE.mode==='embedded' || !selectedKey) return;
+    delete photoUrls[selectedKey];
+    STORE.setItem(K_PHOTOURLS, JSON.stringify(photoUrls));
+    quickUrlEl.value = '';
+    renderEditor();
+  });
+
+  // Search/filter
+  searchEl.addEventListener('input', renderEditor);
+  catEl.addEventListener('change', renderEditor);
+
+  // Customer search/filter
+  cSearch?.addEventListener('input', renderCustomer);
+  cCategory?.addEventListener('change', renderCustomer);
+  cStatus?.addEventListener('change', renderCustomer);
+
+  // Boot
+  if (STORE.mode==='embedded') {
+    editorWrap.style.display = 'none';
+    customerWrap.style.display = '';
+    customerCtas.style.display = '';
+    modeLine.innerHTML = "<b>CUSTOMER PAGE</b> — browse corals and text to buy.";
+    noticeBox.innerHTML = "<b>How to buy:</b> Add items to your Claim List, then tap <b>Text to Buy</b>.";
+    renderCustomer();
+  } else {
+    enableUI(false);
+    renderEditor();
+  }
+})();
+</script>
+
+
+</body></html>
