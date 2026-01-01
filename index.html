@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Brandon Miller's Coral Inventory</title>
+<style>
+:root{--bg1:#f7fbff;--bg2:#eaf6ff;--card:rgba(255,255,255,.92);--card2:rgba(255,255,255,.97);--stroke:rgba(15,23,42,.12);--text:rgba(15,23,42,.92);--muted:rgba(15,23,42,.68);--good:rgba(22,163,74,.85);--warn:rgba(245,158,11,.85);--bad:rgba(239,68,68,.85)}
+*{box-sizing:border-box}
+body{margin:0;color:var(--text);font:16px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;min-height:100vh;background:linear-gradient(180deg,var(--bg1),var(--bg2))}
+.wrap{max-width:1200px;margin:0 auto;padding:28px 16px 96px}
+.top{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+
+.top{
+  position:sticky; top:0; z-index:50;
+  padding:14px 12px; margin: -8px -12px 10px;
+  border-radius:18px;
+  background:rgba(8,12,24,.72);
+  border:1px solid rgba(255,255,255,.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.top h1{font-size:28px;line-height:1.05}
+.sub{font-size:13px}
+.cta .btn{border-radius:999px;padding:10px 12px}
+.cta .btn.primary{background:rgba(84,180,255,.18);border-color:rgba(84,180,255,.35)}
+.cta .btn.primary:hover{transform:translateY(-1px)}
+
+/* TSA-ish product card feel */
+.item{border-radius:22px}
+.item:hover{transform:translateY(-2px);box-shadow:0 16px 44px rgba(0,0,0,.28)}
+.thumb{border-radius:18px}
+.name{font-weight:950;letter-spacing:.1px}
+.metaRow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.badges{display:flex;gap:6px;flex-wrap:wrap}
+.badge{font-size:11px;font-weight:950;padding:6px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06)}
+.badge.wys{border-color:rgba(255,210,140,.35);background:rgba(255,210,140,.10)}
+.badge.priced{border-color:rgba(140,255,196,.35);background:rgba(140,255,196,.10)}
+
+/* Make filters feel like a shop toolbar */
+.controls{gap:10px;grid-template-columns:1.8fr 1fr 1fr 1.1fr 1fr 1fr}
+input[type="text"], select{
+  width:100%;padding:12px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.06);color:var(--text);outline:none;
+}
+input[type="text"]::placeholder{color:rgba(255,255,255,.55)}
+
+/* Mobile: keep CTA visible and make controls swipeable */
+@media (max-width:720px){
+  .wrap{padding:14px 12px 110px}
+  .top{margin: -4px -6px 10px; padding:12px 10px}
+  .controls{display:flex;gap:10px;overflow:auto;padding-bottom:2px;scroll-snap-type:x mandatory}
+  .controls > div{min-width:190px;scroll-snap-align:start}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:420px){ .grid{grid-template-columns:1fr} }
+
+h1{margin:0;font-size:40px;letter-spacing:.2px}
+.sub{margin-top:6px;color:var(--muted)}
+.cta{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:16px;background:var(--card2);border:1px solid var(--stroke);color:rgba(15,23,42,.92);text-decoration:none;font-weight:900;cursor:pointer}
+.notice{margin:16px 0;padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid var(--stroke);color:var(--muted)}
+.banner{margin:14px 0 0;padding:12px 14px;border-radius:18px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.92);font-weight:950}
+.infoRow{display:grid;gap:12px;grid-template-columns:1fr 1fr;margin-top:12px}
+.card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:12px;backdrop-filter:blur(8px)}
+.controls{display:grid;gap:12px;grid-template-columns:1.4fr 1fr 1fr 1.2fr 1fr 1fr;margin:12px 0}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:7px;font-weight:900;letter-spacing:.2px}
+input,select{width:100%;padding:12px;border-radius:14px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.10);color:var(--text);outline:none}
+.checks{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding-top:4px}
+.ck{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);font-weight:900}
+.sectionTitle{margin:18px 0 10px;font-weight:950;font-size:18px;letter-spacing:.2px}
+.stats{display:grid;gap:12px;grid-template-columns:repeat(7,1fr);margin:12px 0 16px}
+.stat .k{font-size:12px;color:var(--muted);font-weight:900}
+.stat .v{font-size:22px;font-weight:950;margin-top:4px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.item{background:rgba(255,255,255,.06);border:1px solid var(--stroke);border-radius:22px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.18);display:flex;flex-direction:column}
+.hero{height:220px;background:rgba(255,255,255,.72);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.70);cursor:pointer}
+.hero img{width:100%;height:100%;object-fit:cover;display:block}
+.meta{padding:12px 12px 14px}
+.row1{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.name{font-weight:950;font-size:18px;line-height:1.2}
+.cat{font-size:12px;color:var(--muted);margin-top:3px;font-weight:900}
+.size{margin-top:6px;font-size:12px;color:rgba(255,255,255,.78);font-weight:900}
+.pill{font-size:11px;font-weight:950;padding:6px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);white-space:nowrap}
+.p-available{color:var(--good)}.p-pending{color:var(--warn)}.p-growing{color:rgba(160,200,255,.90)}.p-sold{color:var(--bad)}
+.notes{margin-top:10px;color:rgba(255,255,255,.78);font-size:13px;white-space:pre-wrap;min-height:18px}
+.priceLine{margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.price{font-weight:950}
+.small{font-size:12px;color:var(--muted)}
+.add{width:100%;margin-top:10px;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.18);color:var(--text);font-weight:950;cursor:pointer}
+.add:hover{background:rgba(0,0,0,.24)}
+.btnRow{display:flex;gap:10px;margin-top:10px}
+.btnSmall{flex:1; padding:10px 10px; border-radius:14px; border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.18); color:var(--text); font-weight:950; cursor:pointer}
+.btnSmall:hover{background:rgba(0,0,0,.24)}
+.modalBack{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.52);padding:18px;z-index:80}
+.modal{width:min(900px,96vw);border-radius:22px;overflow:hidden;background:rgba(12,16,22,.92);border:1px solid rgba(255,255,255,.14)}
+.mHead{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.10);display:flex;justify-content:space-between;gap:10px;align-items:center}
+.mTitle{font-weight:950;font-size:18px}
+.mBody{padding:14px 16px;color:rgba(255,255,255,.84)}
+.mFoot{padding:12px 16px;border-top:1px solid rgba(255,255,255,.10);display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.mBtn{padding:10px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:var(--text);font-weight:950;cursor:pointer}
+/* Floating Cart badge */
+.fab{position:fixed;right:16px;bottom:16px;z-index:90;display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:999px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(10px);box-shadow:0 12px 30px rgba(0,0,0,.22)}
+.badge{min-width:26px;height:26px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:950;background:rgba(0,0,0,.30);border:1px solid rgba(255,255,255,.14)}
+.fabBtn{all:unset;cursor:pointer;font-weight:950}
+@media (max-width:900px){h1{font-size:34px}.controls{grid-template-columns:1fr 1fr}.stats{grid-template-columns:repeat(2,1fr)}.infoRow{grid-template-columns:1fr}}
+
+/* Mobile-first storefront upgrades */
+body{
+  background: linear-gradient(180deg,var(--bg1),var(--bg2));
+  background-image: linear-gradient(180deg,var(--bg1),var(--bg2)), var(--bg-url, none);
+  background-size: cover, cover;
+  background-position: center, center;
+  background-attachment: fixed, fixed;
+}
+.topTools{margin-top:10px; display:flex; flex-direction:column; gap:10px; max-width:720px}
+#qTop{
+  width:100%;
+  padding:12px 12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(0,0,0,.22);
+  color:var(--text);
+  outline:none;
+  font-weight:700;
+}
+#qTop::placeholder{color:rgba(255,255,255,.55)}
+.chips{display:flex; gap:8px; overflow:auto; padding-bottom:2px; -webkit-overflow-scrolling:touch}
+.chip{
+  flex:0 0 auto;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.8);
+  color:rgba(15,23,42,.86);
+  padding:8px 10px;
+  border-radius:999px;
+  font-weight:850;
+  font-size:12px;
+  letter-spacing:.2px;
+  cursor:pointer;
+  user-select:none;
+}
+.chip.active{border-color:rgba(14,165,233,.35);background:rgba(14,165,233,.18)}
+@media (min-width: 760px){ .topTools{flex-direction:row; align-items:center} #qTop{max-width:360px} }
+/* Bright & clean overrides */
+input,select,textarea{ background: rgba(255,255,255,.92); color: rgba(15,23,42,.92); border: 1px solid rgba(15,23,42,.14); }
+input::placeholder{color: rgba(15,23,42,.55)}
+.btn.primary{background: rgba(14,165,233,.18); border-color: rgba(14,165,233,.35)}
+.btn.primary:hover{background: rgba(14,165,233,.24)}
+</style>
+<script data-goatcounter="https://fire2436.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Brandon Miller's Coral Inventory Page</h1>
+      <div class="sub">Browse corals and text to buy.</div>
+      <div class="topTools">
+        <input id="qTop" type="text" placeholder="Search corals..." autocomplete="off"/>
+        <div class="chips" id="chips"></div>
+      </div>
+    </div>
+    <div class="cta">
+      <a class="btn primary" id="textLink" href="#">Text to Buy</a>
+      <a class="btn" id="messengerLink" href="#" target="_blank" rel="noopener">Messenger</a>
+      <a class="btn" id="callLink" href="#">Call</a>
+    </div>
+  </div>
+
+  <div class="banner">Local pickup only. No shipping at this time.</div>
+
+  <div class="controls">
+    <div class="card"><label for="q">Search</label><input id="q" type="text" placeholder="Search..."/></div>
+    <div class="card"><label for="cat">Category</label><select id="cat"></select></div>
+    <div class="card"><label for="st">Status</label>
+      <select id="st"><option value="all">All</option><option value="available">Available</option><option value="pending">Pending</option><option value="growing">Still Growing</option><option value="sold">Sold</option></select>
+    </div>
+    <div class="card"><label>Filters</label>
+      <div class="checks">
+        <div class="ck"><input id="fFeat" type="checkbox"/> <span>Featured</span></div>
+        <div class="ck"><input id="fNew" type="checkbox"/> <span>New</span></div>
+        <div class="ck"><input id="showSold" type="checkbox"/> <span>Show sold</span></div>
+        <div class="ck"><input id="hideNoPrice" type="checkbox"/> <span>Hide no price</span></div>
+      </div>
+    </div>
+    <div class="card"><label for="sort">Sort</label>
+      <select id="sort">
+        <option value="featured">Featured first</option>
+        <option value="new">New first</option>
+        <option value="priceLow">Price: low → high</option>
+        <option value="priceHigh">Price: high → low</option>
+        <option value="name">Name</option>
+      </select>
+    </div>
+    <div class="card"><label>Cart</label><a class="btn" href="javascript:void(0)" id="openCart">Open</a><div class="small" id="cartMini">0 items</div></div>
+  </div>
+
+  <div class="stats card" id="stats"></div>
+
+  <div id="featuredSection" style="display:none;">
+    <div class="sectionTitle">Featured</div>
+    <div class="grid" id="featuredGrid"></div>
+  </div>
+
+  <div class="sectionTitle" id="allTitle" style="display:none;">All items</div>
+  <div class="grid" id="grid"></div>
+
+  <div class="card" style="margin-top:14px;">
+    <div style="display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+      <div>
+        <div style="font-weight:950;">Last updated</div>
+        <div style="margin-top:6px; color:rgba(255,255,255,.78);" id="updatedAt"></div>
+      </div>
+      <div class="small">Tip: Add 3+ items for a bundle discount.</div>
+    </div>
+  </div>
+</div>
+
+<div class="fab" id="fabCart">
+  <button class="fabBtn" id="fabOpen">Cart</button>
+  <div class="badge" id="fabCount">0</div>
+</div>
+
+<div class="modalBack" id="mb">
+  <div class="modal">
+    <div class="mHead"><div class="mTitle" id="mt">Details</div><button class="mBtn" id="mc">Close</button></div>
+    <div class="mBody" id="mcont"></div>
+    <div class="mFoot"><button class="mBtn" id="mok">Close</button></div>
+  </div>
+</div>
+
+<script>
+const DATA = {"phoneDisplay":"(419)890-6572","phoneDigits":"14198906572","pickupNote":"","bundleNote":"","updatedAt":"2026-01-01T15:02:33.725Z","items":[{"category":"LPS","name":"Holy Grail torch"},{"category":"Zoanthids","name":"Goblins on Fire"},{"category":"LPS","name":"BKChem The Grinch torch"},{"category":"Softies","name":"Ultra kenya"},{"category":"Zoanthids","name":"Ring of Fire"},{"category":"SPS","name":"CC dark knight"},{"category":"LPS","name":"TCK Master torch"},{"category":"Softies","name":"Pulsing Xenia"},{"category":"Zoanthids","name":"Mystic"},{"category":"SPS","name":"Back Draft"},{"category":"LPS","name":"Dragon Tamer torch"},{"category":"Zoanthids","name":"RZ Pot of Gold"},{"category":"SPS","name":"Pink Highlighter"},{"category":"LPS","name":"Holy Moly torch"},{"category":"Softies","name":"Jaw breaker mushroom"},{"category":"Zoanthids","name":"ACI Lorax"},{"category":"SPS","name":"JF Homewreaker"},{"category":"LPS","name":"NY Knicks torch"},{"category":"Softies","name":"Sunkist bounce mushrom"},{"category":"Zoanthids","name":"Rastas"},{"category":"SPS","name":"SC Orange Passion"},{"category":"LPS","name":"Dragon Soul torch"},{"category":"Zoanthids","name":"Bambams"},{"category":"SPS","name":"TSA Rainbow sherbert"},{"category":"LPS","name":"Hologram Hammer"},{"category":"Softies","name":"Cloves"},{"category":"Zoanthids","name":"Fairy Farts"},{"category":"SPS","name":"Walt Disney"},{"category":"LPS","name":"Green w/blue tip hammer"},{"category":"Zoanthids","name":"Hurricane"},{"category":"SPS","name":"Rainbow Splice"},{"category":"Zoanthids","name":"Red People Eater"},{"category":"SPS","name":"CC Side Chick"},{"category":"Zoanthids","name":"Magicians"},{"category":"SPS","name":"Fox Flame"},{"category":"Zoanthids","name":"Daisy Cutters"},{"category":"SPS","name":"Cherry Bomb"},{"category":"LPS","name":"WWC Grafted Montipora cap"},{"category":"Zoanthids","name":"Jungle Juice"},{"category":"SPS","name":"Red Handed Tenuous"},{"category":"Zoanthids","name":"Orange Oxide"},{"category":"SPS","name":"Blue Ten-yyy"},{"category":"LPS","name":"Blue raven blastos"},{"category":"Zoanthids","name":"Lazy’s Lashes"},{"category":"SPS","name":"CB the thing anacropora"},{"category":"Zoanthids","name":"Warp drive"},{"category":"SPS","name":"Vivids confetti"},{"category":"LPS","name":"Laffy Taffy goni"},{"category":"Zoanthids","name":"Extreme utter chaos"},{"category":"SPS","name":"Superman table"},{"category":"LPS","name":"Pink and yellow goni"},{"category":"Zoanthids","name":"Bam bam extreme"},{"category":"Zoanthids","name":"Superman"},{"category":"SPS","name":"JF Jolt"},{"category":"LPS","name":"Rainbow acan"},{"category":"Zoanthids","name":"GMK"},{"category":"SPS","name":"Pink floyd"},{"category":"Zoanthids","name":"Lazys golden girls"},{"category":"SPS","name":"Pikachu"},{"category":"LPS","name":"Rainbow chalice"},{"category":"Zoanthids","name":"Marvin the martian"},{"category":"SPS","name":"Rainbow Loom"},{"category":"Zoanthids","name":"Burning ember"},{"category":"SPS","name":"Grizzly Adams"},{"category":"Zoanthids","name":"Great owl"},{"category":"SPS","name":"Yellow Lokani"},{"category":"Zoanthids","name":"Sunny d's"},{"category":"SPS","name":"Pink cadillac"},{"category":"Zoanthids","name":"AIO's"},{"category":"SPS","name":"Blue milli (aquacultured)"},{"category":"Zoanthids","name":"Frozen Apples"},{"category":"Zoanthids","name":"Fruit Loops"},{"category":"Live rock","name":"Live rock (Coraline cultured)"},{"category":"Zoanthids","name":"Illuminati"},{"category":"Zoanthids","name":"King Midas"},{"category":"Zoanthids","name":"Mohawks"},{"category":"SPS","name":"Flaming Unicorn"},{"category":"SPS","name":"RMF Tigers blood"},{"category":"SPS","name":"SBB Hiesenberg"},{"category":"Zoanthids","name":"Stratosphere"},{"category":"Zoanthids","name":"TSA Ultra Kenya tree"},{"category":"Zoanthids","name":"Unnamed"},{"category":"Softies","name":"Gum Drop Mushroom"},{"category":"LPS","name":"Holygrail Micromussa"},{"category":"LPS","name":"Alveopora"},{"category":"Softies","name":"LCH Turquoise Kenya Tree"},{"category":"Zoanthids","name":"WWC Wildfire"},{"category":"Zoanthids","name":"Hydra Lady Dragons Zoanthids Coral"},{"category":"LPS","name":"No name acan"},{"category":"SPS","name":"Bubble bath unicorn"},{"category":"Softies","name":"Bounce Mushroom"},{"category":"Zoanthids","name":"Unknow zoas"},{"category":"Zoanthids","name":"TSA Detonator Zoanthids Coral"},{"category":"SPS","name":"Unknown acro"},{"category":"LPS","name":"LCH Trifecta hammer collection"},{"category":"SPS","name":"Cali Farmer Tenuis"},{"category":"SPS","name":"JF weed eater"},{"category":"LPS","name":"TSA Laffy Taffy goni"},{"category":"LPS","name":"Crocea Clam"},{"category":"SPS","name":"Angry Birds acro"},{"category":"Supplies","name":"Clownfish"},{"category":"LPS","name":"No name goni"},{"category":"SPS","name":"Humilis Humility"},{"category":"SPS","name":"TSA Dippin Dots"},{"category":"SPS","name":"Tyree Merlin Staff"},{"category":"Used equipment","name":"50 Gallon QT tank"},{"category":"Supplies","name":"48\" T5 Hybrid fixture with 2 added reefbrite led strips added"},{"category":"Supplies","name":"36\" T5 Hybrid fixture"},{"category":"SPS","name":"TSA Optimus Prime"},{"category":"Used equipment","name":"messenger test"}],"photoUrls":{"Softies|Jaw breaker mushroom":"https://raw.githubusercontent.com/fire2436/coral-inventory/main/images/Jawbreakermushroom.png","Zoanthids|Fruit Loops":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/FruitLoops.jpg","SPS|Fox Flame":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/FoxFlame.jpg","SPS|Back Draft":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/BackDraft.jpg","LPS|Blue raven blastos":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/BlueRavenBlastos.jpg","LPS|Dragon Soul torch":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/DragonSoul.jpg","Zoanthids|Frozen Apples":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/FrozenApples.jpg","LPS|Hologram Hammer":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/HologramHammer.jpg","LPS|Holy Grail torch":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/HolyGrail.jpg","LPS|Holy Moly torch":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/HolyMoly.jpg","Zoanthids|Illuminati":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/Illuminati.jpg","Zoanthids|King Midas":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/KingMidas.jpg","Zoanthids|Mohawks":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/Mohawks.jpg","SPS|Pink cadillac":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PinkCadillac.jpg","SPS|RMF Tigers blood":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/RMF_Tigers_Blood.jpg","SPS|SBB Hiesenberg":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/SBB%20Heisenberg.jpg","Zoanthids|Sunny d's":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/SunnyD's.jpg","SPS|Vivids confetti":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/VividsConfetti.jpg","LPS|WWC Grafted Montipora cap":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/WWCGraftedMoni.jpg","SPS|Walt Disney":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/WaltDisney.jpg","SPS|SC Orange Passion":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/scOrangePassion.jpg","Zoanthids|TSA Ultra Kenya tree":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/tsa%20Ultra%20Kenya.jpg","LPS|TCK Master torch":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213942076.PORTRAIT.jpg","Zoanthids|Unnamed":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213817168.PORTRAIT.jpg","Softies|Gum Drop Mushroom":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213805597.PORTRAIT.jpg","LPS|Holygrail Micromussa":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213757723.PORTRAIT.jpg","Zoanthids|Great owl":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213705233.PORTRAIT.jpg","Zoanthids|GMK":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213656239.PORTRAIT.jpg","Zoanthids|Extreme utter chaos":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213635237.PORTRAIT.jpg","Zoanthids|Jungle Juice":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213531826.PORTRAIT.jpg","Zoanthids|Goblins on Fire":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213518984.PORTRAIT.jpg","Zoanthids|Lazy’s Lashes":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213514357.PORTRAIT.jpg","Zoanthids|Magicians":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213508472.PORTRAIT.jpg","Zoanthids|Hurricane":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213458895.PORTRAIT.jpg","Zoanthids|Warp drive":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213455682.PORTRAIT.jpg","Zoanthids|Burning ember":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213450735.PORTRAIT.jpg","Zoanthids|Lazys golden girls":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213439307.PORTRAIT.jpg","Zoanthids|RZ Pot of Gold":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213432642.PORTRAIT.jpg","Zoanthids|ACI Lorax":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213318883.PORTRAIT.jpg","Zoanthids|Marvin the martian":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213306334.PORTRAIT.jpg","Zoanthids|Stratosphere":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212937768.LONG_EXPOSURE-01.jpg","Softies|LCH Turquoise Kenya Tree":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212854349.MP.jpg","Zoanthids|WWC Wildfire":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212831840.MP.jpg","Zoanthids|Hydra Lady Dragons Zoanthids Coral":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212820788.MP.jpg","Softies|Sunkist bounce mushrom":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212807033.MP.jpg","Softies|Ultra kenya":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212728196.MP.jpg","SPS|CC dark knight":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212717535.MP.jpg","LPS|No name acan":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212710706.MP.jpg","SPS|Rainbow Loom":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212629844.MP.jpg","SPS|Bubble bath unicorn":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212607272.MP.jpg","LPS|Rainbow chalice":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212601417.MP.jpg","Softies|Bounce Mushroom":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212535281.MP.jpg","Zoanthids|Unknow zoas":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212427076.MP.jpg","Zoanthids|Daisy Cutters":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212419400.MP.jpg","Zoanthids|Superman":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212415765.MP.jpg","Zoanthids|TSA Detonator Zoanthids Coral":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212217053.MP.jpg","SPS|JF Jolt":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_211811402.jpg","SPS|Unknown acro":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_211755770.jpg","LPS|LCH Trifecta hammer collection":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_211721680.jpg","SPS|Blue milli (aquacultured)":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_211701255.jpg","LPS|NY Knicks torch":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_211642457.jpg","SPS|Cali Farmer Tenuis":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_211502747.MP.jpg","SPS|JF weed eater":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_211440496.MP.jpg","LPS|Rainbow acan":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_211317972.jpg","LPS|TSA Laffy Taffy goni":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_211158207.MP.jpg","LPS|Crocea Clam":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_211137055.jpg","SPS|Rainbow Splice":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_210939185.MP.jpg","Supplies|Clownfish":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_205637148.jpg","Live rock|Live rock (Coraline cultured)":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_235455785.jpg","Softies|Pulsing Xenia":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_235532031.jpg","LPS|Laffy Taffy goni":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_235627022.MP.jpg","LPS|Pink and yellow goni":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_235712237.jpg","LPS|No name goni":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_235718612.jpg","SPS|Pink Highlighter":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_235738557.jpg","SPS|JF Homewreaker":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_235806230.jpg","SPS|Yellow Lokani":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_235809706.jpg","SPS|Angry Birds acro":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_235856135.MP.jpg","SPS|CC Side Chick":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_235900465.MP.jpg","SPS|Humilis Humility":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_235923712.jpg","SPS|Superman table":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251229_000054608.MP.jpg","SPS|TSA Rainbow sherbert":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251229_000111069.MP.jpg","SPS|Pikachu":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251229_000132645.MP.jpg","SPS|Pink floyd":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251229_000145524.MP.jpg","SPS|Cherry Bomb":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251229_000253433.MP.jpg","SPS|TSA Dippin Dots":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251229_000114509.MP.jpg","SPS|Tyree Merlin Staff":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251229_000259592.MP.jpg","LPS|Green w/blue tip hammer":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251229_000316013.MP.jpg","SPS|Grizzly Adams":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251229_000352620.MP.jpg","SPS|CB the thing anacropora":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/Screenshot_20251228-103615.png","LPS|BKChem The Grinch torch":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251229_000302670.MP.jpg","LPS|Alveopora":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213747091.PORTRAIT.jpg","LPS|Dragon Tamer torch":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_213942076.PORTRAIT.jpg","SPS|Flaming Unicorn":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_235727014.jpg","SPS|Red Handed Tenuous":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_235730960.jpg","Zoanthids|AIO's":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251130_221956987.jpg","Zoanthids|Fairy Farts":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_223050317.jpg","Zoanthids|Bam bam extreme":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212333660.MP.jpg","Zoanthids|Red People Eater":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_223040079.jpg","Zoanthids|Ring of Fire":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251228_212137064.jpg","Used equipment|50 Gallon QT tank":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251222_140132711.jpg","Supplies|48\" T5 Hybrid fixture with 2 added reefbrite led strips added":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251222_134827334.jpg","Supplies|36\" T5 Hybrid fixture":"https://raw.githubusercontent.com/Fire2436/coral-inventory/main/images/PXL_20251222_134136357.jpg"},"status":{"Live rock|Live rock (Coraline cultured)":"growing","Zoanthids|Illuminati":"growing","Zoanthids|King Midas":"growing","Zoanthids|Mohawks":"available","SPS|Flaming Unicorn":"available","SPS|RMF Tigers blood":"available","SPS|SBB Hiesenberg":"growing","Zoanthids|Stratosphere":"available","Zoanthids|TSA Ultra Kenya tree":"available","LPS|Holy Grail torch":"growing","Zoanthids|Warp drive":"growing","Zoanthids|Rastas":"sold","Zoanthids|Red People Eater":"growing","Zoanthids|Ring of Fire":"growing","Zoanthids|RZ Pot of Gold":"growing","Zoanthids|Jungle Juice":"growing","Zoanthids|GMK":"growing","Zoanthids|Goblins on Fire":"growing","Zoanthids|Great owl":"growing","Zoanthids|Hurricane":"available","Zoanthids|Fairy Farts":"growing","Zoanthids|Extreme utter chaos":"growing","Zoanthids|Daisy Cutters":"growing","Zoanthids|Burning ember":"growing","Zoanthids|Bambams":"growing","Zoanthids|Bam bam extreme":"growing","SPS|TSA Rainbow sherbert":"growing","SPS|JF Jolt":"growing","Softies|Jaw breaker mushroom":"growing","Zoanthids|Unnamed":"available","Softies|Gum Drop Mushroom":"available","LPS|Holygrail Micromussa":"available","LPS|Alveopora":"growing","Softies|LCH Turquoise Kenya Tree":"available","Zoanthids|WWC Wildfire":"available","Zoanthids|Hydra Lady Dragons Zoanthids Coral":"available","LPS|No name acan":"available","SPS|Bubble bath unicorn":"available","Softies|Bounce Mushroom":"available","Zoanthids|Unknow zoas":"available","Zoanthids|TSA Detonator Zoanthids Coral":"available","SPS|Unknown acro":"available","LPS|LCH Trifecta hammer collection":"available","SPS|Cali Farmer Tenuis":"available","SPS|JF weed eater":"available","LPS|TSA Laffy Taffy goni":"available","LPS|Crocea Clam":"available","SPS|Angry Birds acro":"available","Supplies|Clownfish":"available","LPS|No name goni":"available","SPS|Humilis Humility":"available","SPS|TSA Dippin Dots":"available","SPS|Tyree Merlin Staff":"available","Zoanthids|Mystic":"sold","Zoanthids|Orange Oxide":"sold","Used equipment|50 Gallon QT tank":"available","Supplies|48\" T5 Hybrid fixture with 2 added reefbrite led strips added":"available","Supplies|36\" T5 Hybrid fixture":"available","SPS|TSA Optimus Prime":"available","LPS|Holy Moly torch":"growing","LPS|BKChem The Grinch torch":"growing","Used equipment|messenger test":"available"},"notes":{"SPS|Fox Flame":"1\" frag","Live rock|Live rock (Coraline cultured)":"More Coming Soon!  Price is per Lb.","Zoanthids|Illuminati":"Price per polyp ","Zoanthids|King Midas":"1\" frag plug","Zoanthids|Mohawks":"1\" frag plug","SPS|Flaming Unicorn":"1\" frag","SPS|RMF Tigers blood":"1\" frag","SPS|SBB Hiesenberg":"1\" frag","LPS|Dragon Soul torch":"Price is for a single head","Zoanthids|Stratosphere":"Price per polyp","Zoanthids|TSA Ultra Kenya tree":"1\" frag","LPS|Dragon Tamer torch":"Price per head","LPS|Green w/blue tip hammer":"Price per head","LPS|Hologram Hammer":"Price per head","LPS|Holy Grail torch":"Price per head","LPS|Holy Moly torch":"Currently Sold Out\nPrice per head","LPS|Laffy Taffy goni":"Price per 1\" frag plate","LPS|NY Knicks torch":"Price per head","LPS|Pink and yellow goni":"Price per 1\" frag plate","LPS|Rainbow acan":"Price per head","LPS|Rainbow chalice":"$20-$50 per eye depending on the coloration included","LPS|TCK Master torch":"Price per head","LPS|WWC Grafted Montipora cap":"Price per frag plug","Zoanthids|Warp drive":"Price per polyp","Zoanthids|Superman":"Price per polyp","Zoanthids|Sunny d's":"1\" frag plug","Zoanthids|RZ Pot of Gold":"1\" frag plug","Zoanthids|Ring of Fire":"1\" frag plug","Zoanthids|Red People Eater":"1\" frag plug","Zoanthids|Rastas":"1\" frag plug","Zoanthids|Orange Oxide":"1\" frag plug","Zoanthids|Mystic":"1\" frag plug","Zoanthids|Marvin the martian":"Price per polyp","Zoanthids|Magicians":"1\" frag plug","Zoanthids|Lazys golden girls":"1\" frag plug","Zoanthids|Lazy’s Lashes":"1\" frag plug","Zoanthids|Hurricane":"a1\" frag plug","Zoanthids|Great owl":"Price per polyp","Zoanthids|Goblins on Fire":"1\" frag plug","Zoanthids|GMK":"price per polyp","Zoanthids|Frozen Apples":"1\" frag plug","Zoanthids|Fruit Loops":"1\" frag plug","Zoanthids|Fairy Farts":"Price per polyp","Zoanthids|Extreme utter chaos":"1\" frag plug","Zoanthids|Daisy Cutters":"1\" frag plug","Zoanthids|Burning ember":"1\" frag plug","Zoanthids|Bambams":"1\" frag plug","Zoanthids|Bam bam extreme":"1\" frag plug","Zoanthids|AIO's":"1\" frag plug","Zoanthids|ACI Lorax":"1\" frag plug","SPS|Yellow Lokani":"1\" frag plug","SPS|Walt Disney":"1\" frag","SPS|Vivids confetti":"2\" frag","SPS|TSA Rainbow sherbert":"1\" frag","SPS|Superman table":"1\" frag","SPS|SC Orange Passion":"1\" frag","SPS|Rainbow Splice":"1\" frag (All green $40)","SPS|Rainbow Loom":"1\" frag","SPS|Pink Highlighter":"1\" frag","SPS|Pink floyd":"1\" frag","SPS|Pink cadillac":"2\" frag","SPS|Pikachu":"1\" frag","SPS|JF Jolt":"1\" frag","SPS|JF Homewreaker":"1\" frag","SPS|Grizzly Adams":"3\" frag","SPS|Cherry Bomb":"1\" frag","SPS|CC dark knight":"2\" frag  (Mini colonies available)","SPS|CB the thing anacropora":"1\" frag (FREE 5 gallon bucket colony!!!)","LPS|BKChem The Grinch torch":"Price per head ","LPS|Blue raven blastos":"2\" frag","Softies|Cloves":"1\" frag","Softies|Jaw breaker mushroom":"NFS currently","Softies|Pulsing Xenia":"1\" frag","Softies|Sunkist bounce mushrom":"1 Mushroom","Softies|Ultra kenya":"1\" frag","SPS|Back Draft":"1\" frag","SPS|Blue milli (aquacultured)":"1\" frag ","SPS|Blue Ten-yyy":"Mini colonies available","Zoanthids|Unnamed":"","Softies|Gum Drop Mushroom":"","LPS|Holygrail Micromussa":"","LPS|Alveopora":"","Zoanthids|Great Owl":"","Softies|LCH Turquoise Kenya Tree":"","Zoanthids|WWC Wildfire":"","Zoanthids|Hydra Lady Dragons Zoanthids Coral":"","LPS|No name acan":"","SPS|Bubble bath unicorn":"","Softies|Bounce Mushroom":"","Zoanthids|Unknow zoas":"","Zoanthids|TSA Detonator Zoanthids Coral":"","SPS|Unknown acro":"","LPS|LCH Trifecta hammer collection":"","SPS|CC Side Chick":"1\" frag","SPS|Cali Farmer Tenuis":"","SPS|JF weed eater":"","LPS|TSA Laffy Taffy goni":"","LPS|Crocea Clam":"","SPS|Angry Birds acro":"","Supplies|Clownfish":"","LPS|No name goni":"","SPS|Humilis Humility":"","SPS|TSA Dippin Dots":"","SPS|Tyree Merlin Staff":"","Used equipment|50 Gallon QT tank":"Tank, stand, HOB filter, heater, rock, glass covers","Supplies|48\" T5 Hybrid fixture with 2 added reefbrite led strips added":"","Supplies|36\" T5 Hybrid fixture":"","SPS|TSA Optimus Prime":"","Supplies|TEST":"","Used equipment|TEST":"","SPS|test":"","SPS|testing":"","Used equipment|messenger test":""},"size":{},"featured":{"LPS|Blue raven blastos":false,"Live rock|Live rock (Coraline cultured)":false,"Zoanthids|Illuminati":false,"Zoanthids|King Midas":false,"Zoanthids|Mohawks":false,"SPS|Flaming Unicorn":false,"SPS|RMF Tigers blood":false,"SPS|SBB Hiesenberg":false,"Zoanthids|Stratosphere":false,"Zoanthids|TSA Ultra Kenya tree":false,"SPS|Pink cadillac":true,"Zoanthids|Unnamed":false,"Softies|Gum Drop Mushroom":false,"LPS|Holygrail Micromussa":false,"LPS|Alveopora":false,"Zoanthids|Great Owl":false,"Softies|LCH Turquoise Kenya Tree":false,"Zoanthids|WWC Wildfire":false,"Zoanthids|Hydra Lady Dragons Zoanthids Coral":false,"LPS|No name acan":false,"SPS|Bubble bath unicorn":false,"Softies|Bounce Mushroom":false,"Zoanthids|Unknow zoas":false,"Zoanthids|TSA Detonator Zoanthids Coral":false,"SPS|Unknown acro":false,"LPS|LCH Trifecta hammer collection":false,"SPS|Cali Farmer Tenuis":false,"SPS|JF weed eater":false,"LPS|TSA Laffy Taffy goni":false,"LPS|Crocea Clam":false,"SPS|Angry Birds acro":false,"Supplies|Clownfish":false,"LPS|No name goni":false,"SPS|Humilis Humility":false,"SPS|TSA Dippin Dots":false,"SPS|Tyree Merlin Staff":false,"Used equipment|50 Gallon QT tank":false,"Supplies|48\" T5 Hybrid fixture with 2 added reefbrite led strips added":false,"Supplies|36\" T5 Hybrid fixture":false,"SPS|TSA Optimus Prime":false,"Supplies|TEST":false,"Used equipment|TEST":false,"SPS|test":false,"SPS|testing":false,"Used equipment|messenger test":false},"newTag":{"LPS|Blue raven blastos":false,"Live rock|Live rock (Coraline cultured)":false,"Zoanthids|Illuminati":false,"Zoanthids|King Midas":false,"Zoanthids|Mohawks":false,"SPS|Flaming Unicorn":false,"SPS|RMF Tigers blood":false,"SPS|SBB Hiesenberg":false,"LPS|Dragon Soul torch":true,"Zoanthids|Stratosphere":false,"Zoanthids|TSA Ultra Kenya tree":false,"Zoanthids|Unnamed":false,"Softies|Gum Drop Mushroom":false,"LPS|Holygrail Micromussa":false,"LPS|Alveopora":false,"Zoanthids|Great Owl":false,"Softies|LCH Turquoise Kenya Tree":false,"Zoanthids|WWC Wildfire":false,"Zoanthids|Hydra Lady Dragons Zoanthids Coral":false,"LPS|No name acan":false,"SPS|Bubble bath unicorn":false,"Softies|Bounce Mushroom":false,"Zoanthids|Unknow zoas":false,"Zoanthids|TSA Detonator Zoanthids Coral":false,"SPS|Unknown acro":false,"LPS|LCH Trifecta hammer collection":false,"SPS|Cali Farmer Tenuis":false,"SPS|JF weed eater":false,"LPS|TSA Laffy Taffy goni":false,"LPS|Crocea Clam":false,"SPS|Angry Birds acro":false,"Supplies|Clownfish":false,"LPS|No name goni":false,"SPS|Humilis Humility":false,"SPS|TSA Dippin Dots":false,"SPS|Tyree Merlin Staff":false,"Used equipment|50 Gallon QT tank":false,"Supplies|48\" T5 Hybrid fixture with 2 added reefbrite led strips added":false,"Supplies|36\" T5 Hybrid fixture":false,"SPS|TSA Optimus Prime":false,"Supplies|TEST":false,"Used equipment|TEST":false,"SPS|test":false,"SPS|testing":false,"Used equipment|messenger test":false},"createdAt":{"Zoanthids|Illuminati":"2025-12-28T13:21:07.722Z","Zoanthids|King Midas":"2025-12-28T13:21:37.349Z","Zoanthids|Mohawks":"2025-12-28T13:22:03.848Z","SPS|Flaming Unicorn":"2025-12-28T13:26:24.663Z","SPS|RMF Tigers blood":"2025-12-28T13:27:50.736Z","SPS|SBB Hiesenberg":"2025-12-28T13:31:30.394Z","Zoanthids|Stratosphere":"2025-12-28T14:01:52.877Z","Zoanthids|TSA Ultra Kenya tree":"2025-12-28T14:06:44.512Z","Zoanthids|Unnamed":"2025-12-28T22:15:51.495Z","Softies|Gum Drop Mushroom":"2025-12-28T22:18:27.415Z","LPS|Holygrail Micromussa":"2025-12-28T22:19:20.052Z","LPS|Alveopora":"2025-12-28T22:21:47.516Z","Zoanthids|Great Owl":"2025-12-28T22:22:25.223Z","Softies|LCH Turquoise Kenya Tree":"2025-12-28T22:35:31.428Z","Zoanthids|WWC Wildfire":"2025-12-28T22:38:03.992Z","Zoanthids|Hydra Lady Dragons Zoanthids Coral":"2025-12-28T22:39:43.889Z","LPS|No name acan":"2025-12-28T22:41:50.331Z","SPS|Bubble bath unicorn":"2025-12-28T22:43:24.414Z","Softies|Bounce Mushroom":"2025-12-28T22:46:45.479Z","Zoanthids|Unknow zoas":"2025-12-28T22:51:45.983Z","Zoanthids|TSA Detonator Zoanthids Coral":"2025-12-28T23:00:10.744Z","SPS|Unknown acro":"2025-12-28T23:03:27.635Z","LPS|LCH Trifecta hammer collection":"2025-12-28T23:04:26.699Z","SPS|Cali Farmer Tenuis":"2025-12-28T23:07:16.948Z","SPS|JF weed eater":"2025-12-28T23:15:31.677Z","LPS|TSA Laffy Taffy goni":"2025-12-28T23:20:50.798Z","LPS|Crocea Clam":"2025-12-28T23:23:00.854Z","SPS|Angry Birds acro":"2025-12-28T23:28:06.627Z","Supplies|Clownfish":"2025-12-28T23:29:24.442Z","LPS|No name goni":"2025-12-29T00:16:01.403Z","SPS|Humilis Humility":"2025-12-29T00:21:45.173Z","SPS|TSA Dippin Dots":"2025-12-29T00:40:34.442Z","SPS|Tyree Merlin Staff":"2025-12-29T00:48:26.581Z","Used equipment|50 Gallon QT tank":"2025-12-29T10:27:43.826Z","Supplies|48\" T5 Hybrid fixture with 2 added reefbrite led strips added":"2025-12-29T10:49:09.587Z","Supplies|36\" T5 Hybrid fixture":"2025-12-29T10:50:11.946Z","SPS|TSA Optimus Prime":"2025-12-29T19:07:35.926Z","Supplies|TEST":"2025-12-31T19:43:11.436Z","Used equipment|TEST":"2025-12-31T20:08:02.632Z","SPS|test":"2025-12-31T20:38:52.577Z","SPS|testing":"2026-01-01T13:54:03.760Z","Used equipment|messenger test":"2026-01-01T15:02:46.212Z"},"availLbs":{"Live rock|Live rock (Coraline cultured)":0},"pricesPlain":{"LPS|Holy Grail torch":"250","Softies|Alveapora":"$25.00","SPS|Fox Flame":"$20","Live rock|Live rock (Coraline cultured)":"$4.50/lb ","LPS|Dragon Soul torch":"$80.00","LPS|Blue raven blastos":"$20","Zoanthids|Sunny d's":"$15","LPS|BKChem The Grinch torch":"250","LPS|Dragon Tamer torch":"150","LPS|Green w/blue tip hammer":"15","LPS|Hologram Hammer":"35","LPS|Holy Moly torch":"$75.00","LPS|Laffy Taffy goni":"35","LPS|NY Knicks torch":"$65.00","LPS|Pink and yellow goni":"25","LPS|Rainbow acan":"45","LPS|Rainbow chalice":"Read description","LPS|TCK Master torch":"$200.00","LPS|WWC Grafted Montipora cap":"25","Zoanthids|Warp drive":"$10.00","Zoanthids|TSA Ultra Kenya tree":"10","Zoanthids|Superman":"7","Zoanthids|Stratosphere":"60","Zoanthids|RZ Pot of Gold":"$20.00","Zoanthids|Ring of Fire":"$20.00","Zoanthids|Red People Eater":"$20.00","Zoanthids|Rastas":"$20.00","Zoanthids|Orange Oxide":"$20.00","Zoanthids|Mystic":"$20.00","Zoanthids|Mohawks":"10","Zoanthids|Marvin the martian":"8","Zoanthids|Magicians":"$20.00","Zoanthids|Lazys golden girls":"20","Zoanthids|Lazy’s Lashes":"20","Zoanthids|King Midas":"15","Zoanthids|Illuminati":"30","Zoanthids|Hurricane":"20","Zoanthids|Great owl":"25","Zoanthids|Goblins on Fire":"$20.00","Zoanthids|GMK":"$30.00","Zoanthids|Frozen Apples":"20","Zoanthids|Fruit Loops":"30","Zoanthids|Fairy Farts":"40","Zoanthids|Extreme utter chaos":"50","Zoanthids|Daisy Cutters":"$30.00","Zoanthids|Burning ember":"50","Zoanthids|Bambams":"20","Zoanthids|Bam bam extreme":"$30.00","Zoanthids|AIO's":"20","Zoanthids|ACI Lorax":"$50.00","SPS|Yellow Lokani":"$25.00","SPS|Walt Disney":"$40.00","SPS|Vivids confetti":"20","SPS|TSA Rainbow sherbert":"$30.00","SPS|Superman table":"$25.00","SPS|Side Chick":"$40.00","SPS|SC Orange Passion":"45","SPS|SBB Hiesenberg":"80","SPS|RMF Tigers blood":"40","SPS|Rainbow Splice":"80","SPS|Rainbow Loom":"$20.00","SPS|Pink Highlighter":"$60.00","SPS|Pink floyd":"35","SPS|Pink cadillac":"10","SPS|Pikachu":"$30.00","SPS|JF Jolt":"$100.00","SPS|JF Homewreaker":"$100.00","SPS|Grizzly Adams":"20","SPS|Flaming Unicorn":"45","SPS|Cherry Bomb":"$30.00","SPS|CC dark knight":"$30.00","SPS|CB the thing anacropora":"free","Softies|Cloves":"$20.00","Softies|Jaw breaker mushroom":"NFS","Softies|Pulsing Xenia":"FREE","Softies|Sunkist bounce mushrom":"$20.00","Softies|Ultra kenya":"15","SPS|Back Draft":"$20.00","SPS|Blue milli (aquacultured)":"$25.00","SPS|Blue Ten-yyy":"$25.00","Used equipment|50 Gallon QT tank":"$50.00","Supplies|48\" T5 Hybrid fixture with 2 added reefbrite led strips added":"120","Supplies|36\" T5 Hybrid fixture":"$80.00"}};
+
+const PHONE_DIGITS = (DATA.phoneDigits||'').toString();
+const PHONE_DISPLAY = (DATA.phoneDisplay||'').toString();
+const PICKUP_NOTE = (DATA.pickupNote || '').toString();
+const BUNDLE_NOTE = (DATA.bundleNote || '').toString();
+
+document.getElementById('callLink').setAttribute('href','tel:+' + PHONE_DIGITS);
+document.getElementById('textLink').setAttribute('href','sms:+' + PHONE_DIGITS);
+const MESSENGER_HANDLE = (DATA.messengerHandle||'').toString().trim();
+const messengerHref = MESSENGER_HANDLE ? ('https://m.me/' + MESSENGER_HANDLE) : 'https://m.me/';
+document.getElementById('messengerLink').setAttribute('href', messengerHref);
+
+const $ = (id)=>document.getElementById(id);
+const norm=(s)=>(s||'').toString().trim().toLowerCase();
+const itemKey=(c,n)=>c+'|'+n;
+const currency=(n)=> new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
+const parsePrice=(s)=>{ if(s==null) return NaN; const t=(''+s).replace(/[^0-9.]/g,''); if(!t) return NaN; return parseFloat(t); };
+
+const isPerLb = (key)=> (key.split('|')[0]||'').toLowerCase() === 'live rock';
+const availFor = (key)=>{
+  const v = DATA.availLbs && DATA.availLbs[key] !== undefined ? parseFloat(DATA.availLbs[key]) : NaN;
+  return (isFinite(v) && v>0) ? v : NaN;
+};
+const sizeFor = (key)=> (DATA.size && DATA.size[key]) ? (''+DATA.size[key]).trim() : '';
+
+const cartKey='coral_claim_list_v1';
+const cart=JSON.parse(localStorage.getItem(cartKey)||'{}');
+
+const getQty = (key)=>{
+  const v = cart[key];
+  if(v === true) return 1;
+  if(v == null) return 0;
+  if(typeof v === 'number') return v;
+  if(typeof v === 'string'){ const n = parseFloat(v); return isFinite(n) ? n : 1; }
+  if(typeof v === 'object' && v.qty != null){ const n = parseFloat(v.qty); return isFinite(n) ? n : 1; }
+  return 1;
+};
+const setQty = (key, qty)=>{
+  if(!qty || !isFinite(qty) || qty <= 0){ delete cart[key]; return; }
+  const a = availFor(key);
+  if(isPerLb(key) && isFinite(a)) qty = Math.min(qty, a);
+  cart[key] = qty;
+};
+
+function saveCart(){
+  localStorage.setItem(cartKey, JSON.stringify(cart));
+  const count = Object.keys(cart).length;
+  $('cartMini').textContent = count + (count===1?' item':' items');
+  $('openCart').textContent = 'Open ('+count+')';
+  $('fabCount').textContent = String(count);
+}
+
+const statusLabel=(s)=>{
+  const v=(s||'available').toLowerCase();
+  if(v==='pending') return ['Pending','p-pending'];
+  if(v==='growing') return ['Still Growing','p-growing'];
+  if(v==='sold') return ['Sold','p-sold'];
+  return ['Available','p-available'];
+};
+
+function setUpdated(){
+  const d = DATA.updatedAt ? new Date(DATA.updatedAt) : null;
+  $('updatedAt').textContent = d && !isNaN(d) ? d.toLocaleString() : (DATA.updatedAt||'');
+}
+
+function buildCategories(){
+  const set={};
+  (DATA.items||[]).forEach(x=>set[x.category]=true);
+  const cats=Object.keys(set).sort((a,b)=>a.localeCompare(b));
+  $('cat').innerHTML = '<option value="all">All categories</option>' + cats.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join('');
+}
+
+function showModal(title, html){ $('mt').textContent=title; $('mcont').innerHTML=html; $('mb').style.display='flex'; }
+function hideModal(){ $('mb').style.display='none'; }
+
+function buildSmsHref(msg){ return 'sms:' + PHONE_DIGITS + '?&body=' + encodeURIComponent(msg); }
+
+function textToBuy(extraLine){
+  const keys=Object.keys(cart);
+  if(!keys.length && !extraLine) return;
+
+  const parts = keys.map(k=>{
+    const [c,name]=k.split('|');
+    const qty = getQty(k);
+    const per = isPerLb(k);
+    const raw=(DATA.pricesPlain && DATA.pricesPlain[k]) ? (''+DATA.pricesPlain[k]) : '';
+    const priceNum = parsePrice(raw);
+    const prettyUnit = (raw && /[0-9]/.test(raw) && isFinite(priceNum)) ? currency(priceNum) : raw;
+    if(per){
+      return `${name} (${c}) — ${qty} lb${prettyUnit ? ` @ ${prettyUnit}/lb` : ''}`;
+    }
+    return `${name} (${c})${prettyUnit ? ' — ' + prettyUnit : ''}`;
+  });
+
+  let msg = parts.length ? ('Hi Brandon — I want to buy: ' + parts.join(', ') + '. Thanks!') : 'Hi Brandon — I’m interested in a coral pack. Thanks!';
+  if(extraLine) msg += '\n\n' + extraLine;
+
+  if(keys.length >= 3){
+    msg += '\n\nI have ' + keys.length + ' items — can you apply the bundle discount?';
+  } else if(BUNDLE_NOTE){
+    msg += '\n\n' + BUNDLE_NOTE;
+  }
+  if(PICKUP_NOTE) msg += '\n\n' + PICKUP_NOTE;
+
+  window.location.href = buildSmsHref(msg);
+}
+document.getElementById('textLink').onclick = (e)=>{ e.preventDefault(); textToBuy(); };
+
+function cartTotals(){
+  let total = 0;
+  for(const k of Object.keys(cart)){
+    const qty = getQty(k);
+    const per = isPerLb(k);
+    const raw = (DATA.pricesPlain && DATA.pricesPlain[k]) ? (''+DATA.pricesPlain[k]) : '';
+    const n = parsePrice(raw);
+    if(isFinite(n)) total += per ? (n * qty) : n;
+  }
+  return total;
+}
+
+function openCartModal(){
+  const keys=Object.keys(cart);
+  if(!keys.length){ showModal('Cart','<div>No items yet.</div>'); return; }
+
+  let rows='';
+  for(const k of keys){
+    const [c,name]=k.split('|');
+    const per = isPerLb(k);
+    const qty = getQty(k);
+
+    const raw = (DATA.pricesPlain && DATA.pricesPlain[k]) ? (''+DATA.pricesPlain[k]) : '';
+    const n = parsePrice(raw);
+    const unitPrice = (raw && /[0-9]/.test(raw) && isFinite(n)) ? currency(n) : (raw || 'Text for price');
+    const lineTotal = (isFinite(n) ? (per ? (n*qty) : n) : 0);
+    const lineTxt = (isFinite(n) ? currency(lineTotal) : '—');
+
+    const a = availFor(k);
+    const maxAttr = (per && isFinite(a)) ? ` max="${a}"` : '';
+    const availLine = (per && isFinite(a)) ? `<div class="small" style="margin-top:6px;">Available: ${a} lb</div>` : '';
+
+    rows += `<div style="display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.10); align-items:flex-start;">
+      <div style="min-width:0;">
+        <div style="font-weight:950;">${name}</div>
+        <div style="color:rgba(255,255,255,.70); font-size:12px;">${c}${per ? ' • per lb' : ''}</div>
+      </div>
+      <div style="text-align:right; min-width:260px;">
+        ${per ? `<div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">
+          <input class="qty" inputmode="decimal" type="number" step="0.1" min="0.1"${maxAttr} value="${qty}" data-qty="${k.replace(/"/g,'&quot;')}"/>
+          <div style="font-weight:900;">lb</div>
+        </div>
+        <div class="small" style="margin-top:6px;">${unitPrice}${isFinite(n) ? '/lb' : ''}</div>
+        ${availLine}`
+        : `<div style="font-weight:900;">${unitPrice}</div>`}
+        <div style="margin-top:6px; font-weight:950;">${lineTxt}</div>
+        <button class="mBtn" style="margin-top:8px;" data-rm="${k.replace(/"/g,'&quot;')}">Remove</button>
+      </div>
+    </div>`;
+  }
+
+  rows += `<div style="display:flex; justify-content:space-between; padding-top:10px;">
+    <div style="font-weight:950;">Total</div><div style="font-weight:950;">${currency(cartTotals())}</div></div>
+    <div style="margin-top:12px; display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+      <button class="mBtn" id="clearAll">Clear all</button>
+      <button class="mBtn" id="textNow">Text to Buy</button>
+    </div>`;
+
+  showModal('Cart', rows);
+
+  document.querySelectorAll('[data-rm]').forEach(b=>{
+    b.onclick = ()=>{ delete cart[b.getAttribute('data-rm')]; saveCart(); render(); openCartModal(); };
+  });
+
+  document.querySelectorAll('[data-qty]').forEach(inp=>{
+    inp.oninput = ()=>{
+      const key = inp.getAttribute('data-qty');
+      let q = parseFloat(inp.value);
+      if(!isFinite(q) || q<=0) q = 0;
+      setQty(key, q);
+      saveCart();
+      render();
+      clearTimeout(inp._t);
+      inp._t = setTimeout(()=>{ openCartModal(); }, 150);
+    };
+  });
+
+  $('clearAll').onclick = ()=>{ Object.keys(cart).forEach(k=>delete cart[k]); saveCart(); render(); openCartModal(); };
+  $('textNow').onclick = ()=>{ textToBuy(); };
+}
+
+function render(){
+  const q=norm($('q').value);
+  const cat=$('cat').value;
+  const stf=$('st').value;
+  const onlyFeat=$('fFeat').checked;
+  const onlyNew=$('fNew').checked;
+  const showSold=$('showSold').checked;
+  const hideNoPrice=$('hideNoPrice').checked;
+  const sortMode=$('sort').value;
+
+  const its=(DATA.items||[]).slice();
+
+  const keyOf = (it)=> itemKey(it.category,it.name);
+  const priceOf = (key)=>{
+    const raw=(DATA.pricesPlain && DATA.pricesPlain[key]) ? (''+DATA.pricesPlain[key]) : '';
+    const n=parsePrice(raw);
+    return isFinite(n) ? n : NaN;
+  };
+  const createdOf = (key)=>{
+    const t = DATA.createdAt && DATA.createdAt[key] ? Date.parse(DATA.createdAt[key]) : NaN;
+    return isFinite(t) ? t : NaN;
+  };
+
+  its.sort((a,b)=>{
+    const ka=keyOf(a), kb=keyOf(b);
+
+    if(sortMode==='new'){
+      const ta=createdOf(ka), tb=createdOf(kb);
+      if(isFinite(ta) || isFinite(tb)){
+        return (isFinite(tb)?tb:-1e15) - (isFinite(ta)?ta:-1e15);
+      }
+    }
+    if(sortMode==='priceLow' || sortMode==='priceHigh'){
+      const pa=priceOf(ka), pb=priceOf(kb);
+      const aHas=isFinite(pa), bHas=isFinite(pb);
+      if(aHas && bHas) return (sortMode==='priceLow') ? (pa-pb) : (pb-pa);
+      if(aHas!==bHas) return aHas ? -1 : 1;
+    }
+    if(sortMode==='name'){
+      const cn=a.category.localeCompare(b.category); if(cn!==0) return cn;
+      return a.name.localeCompare(b.name);
+    }
+
+    const fa=!!DATA.featured?.[ka], fb=!!DATA.featured?.[kb];
+    if(fa!==fb) return fa?-1:1;
+    const na=!!DATA.newTag?.[ka], nb=!!DATA.newTag?.[kb];
+    if(na!==nb) return na?-1:1;
+    const ca=a.category.localeCompare(b.category); if(ca!==0) return ca;
+    return a.name.localeCompare(b.name);
+  });
+
+  let shown=0, avail=0, pend=0, grow=0, sold=0;
+  const featuredCards=[];
+  const cards=[];
+
+  const matches = (it, key)=>{
+    const st0=(DATA.status?.[key] || 'available').toLowerCase();
+    const isFeat=!!DATA.featured?.[key];
+    const isNew=!!DATA.newTag?.[key];
+    const raw=(DATA.pricesPlain?.[key] || '').toString().trim();
+    const hasPrice = !!raw;
+
+    if(hideNoPrice && !hasPrice) return false;
+    if(q && !(norm(it.name).includes(q) || norm(it.category).includes(q))) return false;
+    if(cat!=='all' && it.category!==cat) return false;
+    if(stf!=='all' && st0!==stf) return false;
+    if(!showSold && st0==='sold') return false;
+    if(onlyFeat && !isFeat) return false;
+    if(onlyNew && !isNew) return false;
+    return true;
+  };
+
+  const cardHtml = (it)=>{
+    const key=itemKey(it.category,it.name);
+    const st0=(DATA.status?.[key] || 'available').toLowerCase();
+    const isFeat=!!DATA.featured?.[key];
+    const isNew=!!DATA.newTag?.[key];
+    const per = isPerLb(key);
+
+    const [label,cls]=statusLabel(st0);
+    const url=(DATA.photoUrls?.[key] || '').trim();
+    const notes=(DATA.notes?.[key] || '').trim();
+    const size=sizeFor(key);
+
+    const raw=(DATA.pricesPlain?.[key] || '').toString().trim();
+    const n = parsePrice(raw);
+    let price = (raw && /[0-9]/.test(raw) && isFinite(n)) ? currency(n) : (raw ? raw : 'Text for price');
+    if(per && price && price!=='Text for price') price = price + ' / lb';
+
+    const a = availFor(key);
+    const availTag = (per && isFinite(a)) ? ` • avail ${a} lb` : '';
+
+    const qty = getQty(key);
+    const sizeLine = size ? `<div class="size">${size}</div>` : '';
+
+    if(per){
+      const disabled1 = (isFinite(a) && qty + 1 > a) ? 'disabled' : '';
+      const disabled5 = (isFinite(a) && qty + 5 > a) ? 'disabled' : '';
+      const disabled10 = (isFinite(a) && qty + 10 > a) ? 'disabled' : '';
+      return `
+        <div class="item">
+          <div class="hero" data-img="${url.replace(/"/g,'&quot;')}" data-name="${it.name.replace(/"/g,'&quot;')}">
+            ${url ? `<img src="${url.replace(/"/g,'&quot;')}" alt="photo">` : `<div>📷 No photo</div>`}
+          </div>
+          <div class="meta">
+            <div class="row1">
+              <div>
+                <div class="name">${it.name}</div>
+                <div class="cat">${it.category} • per lb${availTag}</div>
+                ${sizeLine}
+              </div>
+              <div class="pill ${cls}">${label}</div>
+            </div>
+            <div class="notes">${notes || ''}</div>
+            <div class="priceLine">
+              <div class="price">${price}</div>
+              <div class="small">${isFeat ? 'Featured' : (isNew ? 'New' : '')}</div>
+            </div>
+            <div class="btnRow">
+              <button class="btnSmall" data-addlb="1" data-key="${key.replace(/"/g,'&quot;')}" ${disabled1}>+1</button>
+              <button class="btnSmall" data-addlb="5" data-key="${key.replace(/"/g,'&quot;')}" ${disabled5}>+5</button>
+              <button class="btnSmall" data-addlb="10" data-key="${key.replace(/"/g,'&quot;')}" ${disabled10}>+10</button>
+            </div>
+            <div class="small" style="margin-top:10px;">In cart: <b>${qty || 0} lb</b> ${isFinite(a) ? `(max ${a} lb)` : ''}</div>
+            <button class="add" data-open="1">Open Cart</button>
+          </div>
+        </div>`;
+    }
+
+    const inCart = cart[key] != null;
+    const inTxt = inCart ? 'Added ✔ (click to remove)' : 'Add to Cart';
+    return `
+      <div class="item">
+        <div class="hero" data-img="${url.replace(/"/g,'&quot;')}" data-name="${it.name.replace(/"/g,'&quot;')}">
+          ${url ? `<img src="${url.replace(/"/g,'&quot;')}" alt="photo">` : `<div>📷 No photo</div>`}
+        </div>
+        <div class="meta">
+          <div class="row1">
+            <div>
+              <div class="name">${it.name}</div>
+              <div class="cat">${it.category}</div>
+              ${sizeLine}
+            </div>
+            <div class="pill ${cls}">${label}</div>
+          </div>
+          <div class="notes">${notes || ''}</div>
+          <div class="priceLine">
+            <div class="price">${price}</div>
+            <div class="small">${isFeat ? 'Featured' : (isNew ? 'New' : '')}</div>
+          </div>
+          <button class="add" data-toggle="${key.replace(/"/g,'&quot;')}">${inTxt}</button>
+        </div>
+      </div>`;
+  };
+
+  for(const it of its){
+    const key=itemKey(it.category,it.name);
+    if(!matches(it,key)) continue;
+
+    shown++;
+    const st0=(DATA.status?.[key] || 'available').toLowerCase();
+    if(st0==='pending') pend++; else if(st0==='growing') grow++; else if(st0==='sold') sold++; else avail++;
+
+    const isFeat=!!DATA.featured?.[key];
+    const html = cardHtml(it);
+    if(isFeat) featuredCards.push(html);
+    else cards.push(html);
+  }
+
+  $('stats').innerHTML = `
+    <div class="stat"><div class="k">Showing</div><div class="v">${shown}</div></div>
+    <div class="stat"><div class="k">Available</div><div class="v">${avail}</div></div>
+    <div class="stat"><div class="k">Pending</div><div class="v">${pend}</div></div>
+    <div class="stat"><div class="k">Still Growing</div><div class="v">${grow}</div></div>
+    <div class="stat"><div class="k">Sold</div><div class="v">${sold}</div></div>
+    <div class="stat"><div class="k">Cart</div><div class="v">${Object.keys(cart).length}</div></div>
+    <div class="stat"><div class="k">Text</div><div class="v">${PHONE_DISPLAY}</div></div>`;
+
+  if(featuredCards.length && sortMode==='featured'){
+    $('featuredSection').style.display='block';
+    $('featuredGrid').innerHTML = featuredCards.join('');
+    $('allTitle').style.display = cards.length ? 'block' : 'none';
+  } else {
+    $('featuredSection').style.display='none';
+    $('allTitle').style.display = 'none';
+    $('featuredGrid').innerHTML = '';
+    cards.unshift(...featuredCards);
+  }
+
+  $('grid').innerHTML = cards.join('') || '<div class="card" style="grid-column:1/-1; color:rgba(255,255,255,.75);">No matching items.</div>';
+
+  document.querySelectorAll('[data-toggle]').forEach(b=>{
+    b.onclick = ()=>{
+      const k=b.getAttribute('data-toggle');
+      if(cart[k] != null) delete cart[k];
+      else cart[k] = true;
+      saveCart(); render();
+    };
+  });
+
+  document.querySelectorAll('[data-addlb]').forEach(b=>{
+    b.onclick = ()=>{
+      const inc = parseFloat(b.getAttribute('data-addlb') || '1');
+      const k = b.getAttribute('data-key');
+      const cur = getQty(k) || 0;
+      setQty(k, cur + inc);
+      saveCart(); render();
+    };
+  });
+
+  document.querySelectorAll('[data-open]').forEach(b=>{ b.onclick = ()=>openCartModal(); });
+
+  document.querySelectorAll('.hero').forEach(div=>{
+    div.onclick = ()=>{
+      const url=div.getAttribute('data-img') || '';
+      if(!url) return;
+      showModal('Photo', `<img src="${url.replace(/"/g,'&quot;')}" style="width:100%; max-height:70vh; object-fit:contain; border-radius:16px;">`);
+    };
+  });
+
+  if(typeof updateChipsActive==='function') updateChipsActive();
+}
+
+document.getElementById('openCart').onclick = openCartModal;
+document.getElementById('fabOpen').onclick = openCartModal;
+document.getElementById('fabCart').onclick = openCartModal;
+
+document.getElementById('mc').onclick = hideModal;
+document.getElementById('mok').onclick = hideModal;
+document.getElementById('mb').onclick = (e)=>{ if(e.target===document.getElementById('mb')) hideModal(); };
+
+['q','cat','st','fFeat','fNew','showSold','hideNoPrice','sort'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', render);
+  document.getElementById(id).addEventListener('change', render);
+});
+
+/* --- Mobile storefront helpers (search + chips + background) --- */
+function buildChips(){
+  const host = document.getElementById('chips');
+  if(!host) return;
+
+  const make = (label, action, key)=>{
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.type = 'button';
+    b.textContent = label;
+    if(key) b.dataset.key = key;
+    b.onclick = ()=>{ action(); render(); };
+    return b;
+  };
+
+  host.innerHTML = '';
+
+  host.appendChild(make('All', ()=>{
+    document.getElementById('cat').value = 'all';
+    document.getElementById('fNew').checked = false;
+  }, 'all'));
+
+  host.appendChild(make('Priced', ()=>{ document.getElementById('hideNoPrice').checked = true; }, 'priced'));
+  host.appendChild(make('WYSIWYG', ()=>{ document.getElementById('hideNoPrice').checked = false; }, 'wysiwyg'));
+  host.appendChild(make('New', ()=>{ document.getElementById('fNew').checked = true; }, 'new'));
+
+  const sel = document.getElementById('cat');
+  Array.from(sel.options || []).forEach(opt=>{
+    if(!opt || opt.value==='all') return;
+    host.appendChild(make(opt.textContent, ()=>{ document.getElementById('cat').value = opt.value; }, 'cat:'+opt.value));
+  });
+
+  updateChipsActive();
+}
+
+function updateChipsActive(){
+  const host = document.getElementById('chips');
+  if(!host) return;
+
+  const cat = document.getElementById('cat').value;
+  const hideNoPrice = document.getElementById('hideNoPrice').checked;
+  const onlyNew = document.getElementById('fNew').checked;
+
+  host.querySelectorAll('.chip').forEach(b=>b.classList.remove('active'));
+
+  const setActive = (key)=>{
+    const el = host.querySelector(`.chip[data-key="${key}"]`);
+    if(el) el.classList.add('active');
+  };
+
+  if(cat && cat !== 'all') setActive('cat:'+cat);
+  else setActive('all');
+
+  if(onlyNew) setActive('new');
+  if(hideNoPrice) setActive('priced');
+  else setActive('wysiwyg');
+}
+
+(function wireTopSearch(){
+  const top = document.getElementById('qTop');
+  const q = document.getElementById('q');
+  if(!top || !q) return;
+
+  top.value = q.value || '';
+
+  const sync = (val)=>{
+    q.value = val;
+    top.value = val;
+    render();
+  };
+
+  top.addEventListener('input', ()=>sync(top.value));
+  q.addEventListener('input', ()=>{ if(top.value !== q.value) top.value = q.value; });
+
+  top.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){ sync(''); top.blur(); }
+  });
+})();
+
+(function setBackground(){
+  const url = (DATA && DATA.backgroundImageUrl) ? String(DATA.backgroundImageUrl).trim() : '';
+  if(!url) return;
+  document.documentElement.style.setProperty('--bg-url', `url("${url.replace(/"/g,'\"')}")`);
+})();
+
+setUpdated(); buildCategories(); buildChips(); saveCart(); render();
+</script>
+</body></html>
